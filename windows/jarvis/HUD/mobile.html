@@ -47,12 +47,12 @@
 </style>
 </head>
 <body>
-<header><div class="logo">J.A.R.V.I.S.</div><div class="sub">CONNESSO AL MAC // RETE LOCALE</div></header>
+<header><div class="logo">J.A.R.V.I.S.</div><div class="sub">CONNESSO AL PC // RETE LOCALE</div></header>
 <div class="core"></div>
 <div id="log"></div>
 <div class="chips">
   <button class="chip">Briefing</button><button class="chip">Impegni di oggi</button><button class="chip">Mail non lette</button>
-  <button class="chip">WhatsApp non letti</button><button class="chip">Notizie finanza</button><button class="chip">Notizie Italia</button>
+  <button class="chip">Promemoria da fare</button>
 </div>
 <div class="confirm"><button id="yes">CONFERMA</button><button id="no" class="no">ANNULLA</button></div>
 <form id="f"><input id="t" placeholder="Comando (usa il microfono della tastiera)" autocomplete="off"><button>INVIA</button></form>
@@ -79,7 +79,7 @@ async function ask(text) {
     say(reply);
   } catch (e) {
     document.body.className = "";
-    add("j", "Mac non raggiungibile: deve essere acceso, sveglio e sulla stessa rete (o su Tailscale).");
+    add("j", "PC non raggiungibile: deve essere acceso, sveglio e sulla stessa rete (o su Tailscale).");
   }
 }
 document.getElementById("f").onsubmit = (e) => { e.preventDefault(); const t = document.getElementById("t"); const v = t.value.trim(); if (v) { t.value = ""; ask(v); } };

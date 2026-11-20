@@ -1,0 +1,2 @@
+# Installa JARVIS e tutte le sue dipendenze (elencate in pyproject.toml) in modalita' modificabile.
+-e .

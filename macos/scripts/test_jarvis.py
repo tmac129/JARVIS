@@ -2,7 +2,7 @@
 """J.A.R.V.I.S. end-to-end test: talks to the running app (POST /ask.json), so every tool runs
 with JARVIS.app's own permissions. Irreversible actions are tested up to the confirmation gate, then cancelled.
 Requires macOS, JARVIS.app running and "Accesso da iPhone" enabled (it uses the local HTTP endpoint).
-Usage: python3 scripts/test_jarvis.py [--solo offline]
+Usage: python3 macos/scripts/test_jarvis.py [--solo offline]
 --solo offline: only the checks that need neither the app nor tokens (output cap, model routing)."""
 import json, os, re, shutil, subprocess, sys, tempfile, time, urllib.error, urllib.request
 from pathlib import Path
@@ -189,9 +189,7 @@ def main():
     check("crea nota", "crea una nota intitolata Test JARVIS con scritto prova di J.A.R.V.I.S.", r"Nota|creat")
     check("cerca nota", "cerca la nota Test JARVIS", r"Test JARVIS|trovat")
 
-    print("== NOTIZIE / SCHERMO / SISTEMA / BRIEFING")
-    check("notizie finanza", "notizie importanti di finanza", r".")
-    check("notizie italia", "notizie italiane più importanti", r".")
+    print("== SCHERMO / SISTEMA / BRIEFING")
     check("schermo (vision)", "cosa c'è sullo schermo?", r".")
     check("app aperte", "quali app sono aperte?", r".")
     check("briefing", "briefing", r".")

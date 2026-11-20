@@ -13,9 +13,8 @@ public enum CLI {
     jarvis file find <nome> [--ext pdf] [--in DIR] [--days N] [--dirs] | ls DIR [--ext pdf] | move|copy <SRC...> --to DIR | rename <SRC> <NOME> | mkdir DIR | open|reveal <SRC> | trash <SRC...>
     jarvis wa unread | chats [N] | read <nome|w1> [--n 15] | send --to <nome|numero|w1> --text T   (WhatsApp)
     jarvis sys open|quit <app> | apps | volume <0-100|su|giu|muto|attiva> | brightness <0-100|su|giu> | wifi on|off | dark on|off | lock | sleep | screenshot | battery
-    jarvis music play [brano|artista|playlist] | pause | next | prev | now [--app spotify|music]
+    jarvis music play [brano|artista] | pause | next | prev | now   (Spotify)
     jarvis note add --title T [--body B] [--folder F] | list | search <testo> | read <nt1> | append <nt1> --text T
-    jarvis news [italia|finanza|tutte] [N] | read <n1> | open <n1>
     jarvis doc read <f1|percorso> [--pages 1-5]          (PDF, Word, RTF, testo, immagini)
     jarvis screen [--full]                               (cattura la finestra che l'utente sta guardando)
     jarvis now
@@ -41,7 +40,6 @@ public enum CLI {
             case "sys", "system": out = try SysTool.run(rest)
             case "music", "musica": out = try MusicTool.run(rest)
             case "note", "notes": out = try NotesTool.run(rest)
-            case "news", "notizie": out = try NewsTool.run(rest)
             case "doc", "docs": out = try DocTool.run(rest)
             case "screen", "schermo": out = try ScreenTool.run(rest)
             case "now", "ora": out = When.fmt(Date())

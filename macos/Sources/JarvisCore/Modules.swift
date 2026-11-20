@@ -4,7 +4,7 @@ import Foundation
 /// State lives in ~/Library/Application Support/JARVIS/modules.json, shared by the app and every `jarvis` process,
 /// so it survives restarts and applies to commands run by Claude too.
 public enum Module: String, CaseIterable, Codable {
-    case mail, calendar, reminders, whatsapp, notes, files, music, news, screen
+    case mail, calendar, reminders, whatsapp, notes, files, music, screen
 
     public var label: String {
         switch self {
@@ -15,7 +15,6 @@ public enum Module: String, CaseIterable, Codable {
         case .notes: return "Note"
         case .files: return "File e documenti"
         case .music: return "Musica"
-        case .news: return "Notizie"
         case .screen: return "Schermo"
         }
     }
@@ -30,7 +29,6 @@ public enum Module: String, CaseIterable, Codable {
         case .notes: return ["note", "notes"]
         case .files: return ["file", "files", "doc", "docs"]
         case .music: return ["music", "musica"]
-        case .news: return ["news", "notizie"]
         case .screen: return ["screen", "schermo"]
         }
     }
