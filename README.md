@@ -11,7 +11,7 @@ Il ragionamento è affidato a Claude tramite la CLI ufficiale di Claude Code. Le
 **Cosa serve, in sintesi**
 
 - Un **Mac** con macOS 14 o successivo. È disponibile **solo per macOS**: non esistono versioni per Windows, Linux, iPhone o Android.
-- Un **abbonamento Claude Pro** (o Max/Ultra) collegato a Claude Code. Il piano gratuito non basta. In alternativa, un account Anthropic Console a consumo.
+- Un **abbonamento Claude Pro** (o Max) collegato a Claude Code. Il piano gratuito non basta. In alternativa, un account Anthropic Console a consumo.
 - Le app di sistema che vuoi far usare a JARVIS (vedi [App collegate](#app-collegate)).
 
 ## App collegate
@@ -50,7 +50,7 @@ Le notizie di borsa sono titoli giornalistici sintetizzati da Claude, non quotaz
 
 - **HUD per macOS**: finestra con nucleo animato, telemetria (CPU, memoria, batteria, rete), feed delle azioni e trascrizione. Si richiama con ⌥Spazio o ⌘⇧J.
 - **Voce**: push-to-talk con ⌥⇧Spazio e ascolto continuo opzionale della parola "Jarvis". Il riconoscimento avviene sul dispositivo quando macOS lo supporta. Le risposte sono lette ad alta voce.
-- **Router a tre livelli**: Haiku per i comandi normali, Sonnet per analisi e testi, Opus per il ragionamento approfondito. `/sonnet` e `/opus` forzano il modello.
+- **Router a più livelli**: Haiku per i comandi normali, Sonnet per analisi e testi. Opus (ragionamento approfondito) e Fable (massima capacità, costo più alto) si usano solo con `/opus` o `/fable`. `/sonnet`, `/haiku`, `/opus` e `/fable` forzano il modello.
 - **Strumenti**: Mail (lettura, ricerca, bozze, invio), Contatti, Calendario, Promemoria, sveglie (launchd) e timer, file (ricerca Spotlight, sposta, copia, rinomina, cestina), WhatsApp, Note, musica (Spotify e Apple Music), notizie RSS, lettura di documenti (PDF, Word, RTF, immagini), schermate.
 - **Iniziativa**: briefing del mattino, avviso 15 minuti prima degli impegni, avviso di batteria scarica.
 - **Telefono**: pagina web servita dal Mac sulla rete locale, protetta da token. Va aggiunta alla schermata Home.
@@ -62,7 +62,7 @@ Le notizie di borsa sono titoli giornalistici sintetizzati da Claude, non quotaz
 | Sistema | macOS 14 Sonoma o successivo (sviluppato e provato su Apple Silicon) |
 | Compilatore | Swift 5.10+ (Xcode 16 o Command Line Tools) |
 | AI | [Claude Code](https://code.claude.com/docs) installato e collegato al **tuo** account (vedi sotto) |
-| Account | Abbonamento Claude **Pro**, Max o Ultra, oppure un account Anthropic Console con consumo a pagamento |
+| Account | Abbonamento Claude **Pro** o Max, oppure un account Anthropic Console con consumo a pagamento |
 | Opzionali | WhatsApp per Mac, Spotify, Tailscale (per usarlo da fuori casa) |
 
 Nessuna dipendenza di terze parti: solo framework Apple (AppKit, WebKit, EventKit, PDFKit, Speech, Network) e SQLite di sistema. Lo script di test usa solo la libreria standard di Python 3.
@@ -71,7 +71,7 @@ Nessuna dipendenza di terze parti: solo framework Apple (AppKit, WebKit, EventKi
 
 ## Account Claude (obbligatorio)
 
-JARVIS non contiene chiavi né un proprio accesso a Claude. Usa la CLI ufficiale di Claude Code installata sul tuo Mac, con il **tuo** account: ogni persona usa il proprio abbonamento e i propri limiti. Il piano gratuito di Claude non basta: Claude Code è incluso negli abbonamenti Pro, Max e Ultra.
+JARVIS non contiene chiavi né un proprio accesso a Claude. Usa la CLI ufficiale di Claude Code installata sul tuo Mac, con il **tuo** account: ogni persona usa il proprio abbonamento e i propri limiti. Il piano gratuito di Claude non basta: Claude Code è incluso negli abbonamenti Pro e Max.
 
 1. Installa Claude Code seguendo la [guida ufficiale](https://code.claude.com/docs).
 2. Collega l'account dal Terminale:
@@ -94,8 +94,8 @@ Il login avviene sempre nella CLI ufficiale di Anthropic, mai dentro JARVIS: l'a
 ## Installazione
 
 ```bash
-git clone https://github.com/<tuo-utente>/<nome-repo>.git
-cd <nome-repo>
+git clone https://github.com/tmac129/JARVIS.git
+cd JARVIS
 ./scripts/build.sh
 ```
 
@@ -137,7 +137,7 @@ Da quel momento "che impegni ho domani?" legge anche Google Calendar e "mail non
 ## Sicurezza e privacy
 
 - **Conferma obbligatoria** per le azioni irreversibili o rischiose: inviare mail e WhatsApp, eliminare eventi, cestinare file, spostamenti in blocco, operazioni da o verso cartelle di sistema o nascoste, apertura di app e script. Il modello può solo *chiedere* la conferma. Il dialogo mostra il riepilogo registrato dallo strumento, non testo che il modello o una mail potrebbero falsificare.
-- **Claude con permessi minimi**: un solo strumento (`Bash` limitato al comando `jarvis`), nessun server MCP, `jarvis confirm` vietato. In più il binario rifiuta le conferme quando lo chiama il modello.
+- **Claude con permessi minimi**: il solo strumento `Bash` limitato al comando `jarvis` (in più `Read`, solo per le richieste che leggono lo schermo), nessun server MCP, `jarvis confirm` vietato. In più il binario rifiuta le conferme quando lo chiama il modello.
 - **Testi non fidati**: il prompt di sistema tratta mail, chat, pagine web e documenti come dati, non come istruzioni. Resta comunque un sistema basato su un modello linguistico: leggi sempre il riepilogo prima di confermare.
 - **Server per il telefono**: spento di default. Usa un token casuale a 24 caratteri e HTTP in chiaro sulla rete locale. Attivalo solo su reti fidate o tramite Tailscale, non esporre mai la porta 8787 su Internet e non condividere il link con il token.
 - **Dati locali**: preferenze, log delle azioni, token e stato sono in `~/Library/Application Support/JARVIS`, mai nel repository. I testi delle richieste passano dalla CLI di Claude Code secondo le condizioni del tuo account.
