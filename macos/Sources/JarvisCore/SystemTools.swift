@@ -5,12 +5,21 @@ import PDFKit
 // MARK: - System control
 
 enum SysTool {
-    static func run(_ a: [String]) throws -> String {
+    /// A path (~/Downloads/X.app, /tmp/x) instead of the name of an installed app: `open -a` would launch any
+    /// downloaded bundle, so it needs the same confirmation as `file open` on an executable.
+    static func looksLikePath(_ arg: String) -> Bool {
+        arg.contains("/") || arg.contains(":") || arg.hasPrefix("~") || arg.hasPrefix(".")
+    }
+
+    static func run(_ a: [String], confirmed: Bool = false, raw: [String] = []) throws -> String {
         let sub = a.first ?? ""
         let arg = a.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
         switch sub {
         case "open", "apri":
             guard !arg.isEmpty else { throw ToolError("uso: sys open <app>") }
+            if looksLikePath(arg) && !confirmed {
+                return Gate.request("Aprire \(arg) (percorso, non un'app installata)", argv: raw.isEmpty ? ["sys"] + a : raw)
+            }
             let r = try runProcess("/usr/bin/open", ["-a", arg])
             if r.code != 0 { throw ToolError("app \"\(arg)\" non trovata") }
             ActionLog.add("SYSTEM", "Aperta \(arg)")

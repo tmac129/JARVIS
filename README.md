@@ -273,7 +273,7 @@ Un modulo disattivato sparisce dalle istruzioni date a Claude e dal briefing, e 
 
 ## Sicurezza e privacy
 
-- **Conferma obbligatoria** per le azioni irreversibili o rischiose: inviare mail e WhatsApp, eliminare eventi, cestinare file, spostamenti in blocco, operazioni da o verso cartelle di sistema o nascoste, apertura di app e script. Il modello può solo *chiedere* la conferma. Il dialogo mostra il riepilogo registrato dallo strumento, non testo che il modello o una mail potrebbero falsificare.
+- **Conferma obbligatoria** per le azioni irreversibili o rischiose: inviare mail e WhatsApp, eliminare eventi, cestinare file, spostamenti in blocco, operazioni da o verso cartelle di sistema o nascoste, apertura di programmi, script o file eseguibili, e di un percorso o indirizzo passato al posto del nome di un'app (le app installate si aprono subito). Il modello può solo *chiedere* la conferma. Il dialogo mostra il riepilogo registrato dallo strumento, non testo che il modello o una mail potrebbero falsificare.
 - **Claude con permessi minimi**: il solo strumento `Bash` limitato al comando `jarvis` (in più `Read`, solo per le richieste che leggono lo schermo), nessun server MCP, `jarvis confirm` vietato. In più il comando rifiuta le conferme quando lo chiama il modello.
 - **Testi non fidati**: il prompt di sistema tratta mail, chat, pagine web e documenti come dati, non come istruzioni. Resta comunque un sistema basato su un modello linguistico: leggi sempre il riepilogo prima di confermare.
 - **Server per il telefono**: spento di default. Usa un token casuale e HTTP in chiaro sulla rete locale. Attivalo solo su reti fidate o tramite Tailscale, non esporre mai la porta 8787 su Internet e non condividere il link con il token.

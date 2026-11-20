@@ -231,14 +231,32 @@ def wifi(on: bool) -> str:
 
 # ----------------------------------------------------------------------------- comando principale
 
-def run(a: list[str]) -> str:
+def looks_like_path(arg: str) -> bool:
+    """Percorso, indirizzo o protocollo (C:\\..., .\\x.exe, \\\\server\\share, https://, ms-...:) invece del nome di un'app."""
+    return any(ch in arg for ch in "/\\:%~") or arg.startswith(".")
+
+
+def run(a: list[str], confirmed: bool = False, raw: list[str] | None = None) -> str:
     sub = a[0] if a else ""
     arg = " ".join(a[1:]).strip()
     if sub in ("open", "apri"):
         if not arg:
             raise ToolError("uso: sys open <app>")
+        # Un percorso o un protocollo aprirebbe qualsiasi file (anche un .exe o uno script scaricato):
+        # sempre con conferma, come `file open`. I nomi delle app installate restano immediati.
+        path_like = looks_like_path(arg)
+        if path_like and not confirmed:
+            from .. import gate
+            return gate.request(f"Aprire {arg} (percorso o indirizzo, non un'app installata)", raw or ["sys", *a])
         if not IS_WINDOWS:
             raise ToolError("l'apertura delle app richiede Windows")
+        if path_like:
+            try:
+                os.startfile(arg)  # type: ignore[attr-defined]
+            except OSError:
+                raise ToolError(f'"{arg}" non trovato')
+            ActionLog.add("SYSTEM", f"Aperto {arg}")
+            return f"Aperto {arg}."
         app = find_start_app(arg)
         try:
             if app:
