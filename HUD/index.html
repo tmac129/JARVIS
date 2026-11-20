@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S.</title>
+<link rel="stylesheet" href="hud.css">
+</head>
+<body class="standby">
+<div class="grid-bg"></div>
+<div class="vignette"></div>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">J.A.R.V.I.S.</div>
+    <div class="sub">JUST A RATHER VERY INTELLIGENT SYSTEM // STARK INTERFACE MK-LXXXV</div>
+  </div>
+  <div class="status">
+    <span class="dot"></span>
+    <span id="status-text">SYSTEM ONLINE // STANDBY</span>
+  </div>
+  <div class="clock">
+    <div id="clock-time">--:--:--</div>
+    <div id="clock-date">---</div>
+  </div>
+</header>
+
+<aside class="panel left">
+  <div class="panel-title">TELEMETRIA // MACBOOK AIR M4</div>
+  <div class="metric">
+    <div class="row"><span>CPU</span><span id="cpu-val">--%</span></div>
+    <div class="bar"><i id="cpu-bar"></i></div>
+    <canvas class="spark" id="cpu-spark"></canvas>
+  </div>
+  <div class="metric">
+    <div class="row"><span>MEMORIA</span><span id="ram-val">--</span></div>
+    <div class="bar"><i id="ram-bar"></i></div>
+  </div>
+  <div class="metric">
+    <div class="row"><span>BATTERIA</span><span id="batt-val">--%</span></div>
+    <div class="bar"><i id="batt-bar"></i></div>
+  </div>
+  <div class="metric">
+    <div class="row"><span>RETE</span><span id="net-val">-- / --</span></div>
+    <canvas class="spark" id="net-spark"></canvas>
+  </div>
+  <div class="kv"><span>TERMICO</span><span id="thermal-val">--</span></div>
+  <div class="kv"><span>UPTIME</span><span id="uptime-val">--</span></div>
+  <div class="divider"></div>
+  <div class="panel-title">NUCLEO AI</div>
+  <div class="core-label" id="model-val">CORE: HAIKU [LOW-TOKEN MODE]</div>
+  <div class="kv"><span>TURNI</span><span id="turns-val">0</span></div>
+  <div class="kv"><span>TOKEN CONTESTO</span><span id="tok-val">0</span></div>
+  <div class="kv"><span>COSTO SESSIONE</span><span id="cost-val">$0.0000</span></div>
+  <div class="kv"><span>ULTIMA RISPOSTA</span><span id="lat-val">--</span></div>
+</aside>
+
+<main class="center">
+  <canvas id="core"></canvas>
+  <div class="module" id="module">
+    <div class="module-name" id="module-name">STANDBY</div>
+    <div class="module-sub" id="module-sub">IN ATTESA DI ISTRUZIONI</div>
+  </div>
+  <div class="alert" id="alert" hidden>
+    <div class="alert-title">// PROTOCOLLO DI SICUREZZA: CONFERMA RICHIESTA</div>
+    <div class="alert-text" id="alert-text"></div>
+    <div class="alert-actions">
+      <button id="btn-confirm">CONFERMA</button>
+      <button id="btn-cancel" class="ghost">ANNULLA</button>
+    </div>
+    <div class="alert-hint">INVIO = CONFERMA // ESC = ANNULLA</div>
+  </div>
+</main>
+
+<div class="right-col">
+  <aside class="panel right">
+    <div class="panel-title">ACTION FEED</div>
+    <ul class="feed" id="feed"></ul>
+  </aside>
+</div>
+
+<footer class="bottom">
+  <div class="transcript">
+    <div class="line user" id="t-user"></div>
+    <div class="line tool" id="t-tool"></div>
+    <div class="line reply" id="t-reply">Buonasera. Tutti i sistemi sono operativi.</div>
+  </div>
+  <form class="cmd" id="cmd-form" autocomplete="off">
+    <span class="prompt">&gt;&gt;</span>
+    <input id="cmd" type="text" spellcheck="false" placeholder="Comando, signore?   (/sonnet, /opus, /fable per forzare il modello)">
+    <button type="button" class="mic" id="btn-mic" title="Push-to-talk">MIC</button>
+  </form>
+  <div class="hint">⌥SPACE RICHIAMA // ESC NASCONDE</div>
+</footer>
+
+<script src="hud.js"></script>
+</body>
+</html>

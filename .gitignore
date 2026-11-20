@@ -1,0 +1,15 @@
+.build/
+dist/
+*.xcodeproj
+.DS_Store
+
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+logs/
+*.log
+config.json
+*.tar.gz
+__pycache__/
+.venv/
