@@ -37,7 +37,7 @@ public enum CLI {
             case "timer", "timers": out = try AlarmTool.timer(cmd == "timers" ? ["list"] : rest)
             case "file", "files": out = try FileTool.run(rest, confirmed: confirmed, raw: argv)
             case "wa", "whatsapp": out = try WhatsAppTool.run(rest, confirmed: confirmed, raw: argv)
-            case "sys", "system": out = try SysTool.run(rest)
+            case "sys", "system": out = try SysTool.run(rest, confirmed: confirmed, raw: argv)
             case "music", "musica": out = try MusicTool.run(rest)
             case "note", "notes": out = try NotesTool.run(rest)
             case "doc", "docs": out = try DocTool.run(rest)
