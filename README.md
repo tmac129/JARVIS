@@ -10,7 +10,7 @@ Il ragionamento è affidato a Claude tramite la CLI ufficiale di Claude Code. Le
 
 **Cosa serve, in sintesi**
 
-- Un **Mac** con macOS 14 o successivo. La versione attuale è solo per macOS. Una versione per Windows è in programma (vedi Installazione). Non esistono versioni per Linux, iPhone o Android.
+- Un **Mac** con macOS 14 o successivo. Non esistono versioni per Windows, Linux, iPhone o Android (dal telefono si usa la pagina web servita dal Mac).
 - Un **abbonamento Claude Pro** (o Max) collegato a Claude Code. Il piano gratuito non basta. In alternativa, un account Anthropic Console a consumo.
 - Le app di sistema che vuoi far usare a JARVIS (vedi [App collegate](#app-collegate)).
 
@@ -67,13 +67,13 @@ Le notizie di borsa sono titoli giornalistici sintetizzati da Claude, non quotaz
 
 Nessuna dipendenza di terze parti: solo framework Apple (AppKit, WebKit, EventKit, PDFKit, Speech, Network) e SQLite di sistema. Lo script di test usa solo la libreria standard di Python 3.
 
-**Linux non è supportato.** La versione attuale usa API native di macOS (AppleScript, EventKit, launchd, WebKit). Una versione per Windows è in programma e userà app compatibili con Windows (Outlook, Microsoft To Do) al posto di quelle Apple. Fino ad allora, `scripts\build.bat` spiega la situazione ed esce.
+**Windows e Linux non sono supportati.** JARVIS usa API native di macOS (AppleScript, EventKit, launchd, WebKit). Su Windows `scripts\build.bat` spiega la situazione ed esce.
 
 ## Account Claude (obbligatorio)
 
 JARVIS non contiene chiavi né un proprio accesso a Claude. Usa la CLI ufficiale di Claude Code installata sul tuo Mac, con il **tuo** account: ogni persona usa il proprio abbonamento e i propri limiti. Il piano gratuito di Claude non basta: Claude Code è incluso negli abbonamenti Pro e Max.
 
-1. Installa Claude Code seguendo la [guida ufficiale](https://code.claude.com/docs/en/setup). Su macOS: `curl -fsSL https://claude.ai/install.sh | bash`. Su Windows, vedi la sezione Installazione.
+1. Installa Claude Code seguendo la [guida ufficiale](https://code.claude.com/docs/en/setup). Su macOS: `curl -fsSL https://claude.ai/install.sh | bash`.
 2. Collega l'account dal Terminale:
 
    ```bash
@@ -92,8 +92,6 @@ JARVIS non contiene chiavi né un proprio accesso a Claude. Usa la CLI ufficiale
 Il login avviene sempre nella CLI ufficiale di Anthropic, mai dentro JARVIS: l'app non vede né salva la tua password o i token di accesso. Ogni richiesta che passa da Claude consuma i limiti del tuo piano (o credito API con la Console). Le azioni frequenti gestite dal router locale non consumano nulla.
 
 ## Installazione
-
-### macOS (versione attuale)
 
 Richiede macOS 14 o successivo, Xcode o i Command Line Tools, e Claude Code collegato al tuo account.
 
@@ -134,33 +132,6 @@ Al primo avvio macOS chiede i permessi solo quando servono:
 | Registrazione schermo | "cosa c'è sullo schermo?" |
 | Microfono e Riconoscimento vocale | comandi a voce |
 | Accesso completo al disco (opzionale) | lettura veloce di Mail e WhatsApp dai loro database |
-
-### Windows (in programma)
-
-> La versione Windows non è ancora disponibile. I passi seguenti descrivono l'installazione prevista e saranno verificati quando il porting sarà completato. Non seguirli come guida funzionante prima di allora.
-
-1. Installa [Git for Windows](https://git-scm.com/downloads/win).
-2. Installa [Python 3.12](https://www.python.org/downloads/) e spunta "Add python.exe to PATH".
-3. Apri PowerShell e installa Claude Code:
-
-   ```powershell
-   irm https://claude.ai/install.ps1 | iex
-   ```
-4. Avvia `claude` e completa il login nel browser. Controlla con `claude auth status`.
-5. Scarica JARVIS:
-
-   ```powershell
-   git clone https://github.com/tmac129/JARVIS.git
-   cd JARVIS
-   ```
-6. Crea l'ambiente Python e installa le dipendenze:
-
-   ```powershell
-   py -3.12 -m venv .venv
-   .venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-7. Avvia JARVIS: `python -m jarvis`. Al primo avvio, collega i tuoi account Microsoft seguendo il codice mostrato nel terminale.
 
 ## Uso
 
