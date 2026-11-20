@@ -499,7 +499,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if c.contains("jarvis sys") { return "SYSTEM" }
         if c.contains("jarvis music") { return "MUSIC" }
         if c.contains("jarvis note") { return "NOTES" }
-        if c.contains("jarvis news") { return "NEWS_FEED" }
         if c.contains("jarvis doc") { return "DOCUMENTS" }
         if c.contains("jarvis screen") || c.lowercased().contains("view/") { return "VISION" }
         return "NEURAL_LINK"

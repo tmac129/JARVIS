@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-windows"
+version = "0.1.0"
+description = "J.A.R.V.I.S. per Windows: assistente personale in italiano che usa Claude Code come cervello"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "google-api-python-client",
+    "google-auth-oauthlib",
+    "google-auth-httplib2",
+    "requests",
+    "psutil",
+    "pypdf",
+    "pypdfium2",
+    "python-docx",
+    "striprtf",
+    "pillow",
+    "send2trash",
+    "qrcode",
+    "pywebview",
+    "pystray",
+    "keyboard",
+    "sounddevice",
+    "vosk",
+    "pycaw; sys_platform == 'win32'",
+    "comtypes; sys_platform == 'win32'",
+    "pywin32; sys_platform == 'win32'",
+    "screen-brightness-control; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+jarvis = "jarvis.cli:main"
+
+[project.gui-scripts]
+jarvis-hud = "jarvis.cli:hud_entry"
+
+[tool.setuptools.packages.find]
+include = ["jarvis*"]
+
+[tool.setuptools.package-data]
+jarvis = ["HUD/*"]

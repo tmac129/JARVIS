@@ -128,55 +128,25 @@ enum SysTool {
     }
 }
 
-// MARK: - Music (Spotify / Apple Music)
+// MARK: - Music (Spotify)
 
 enum MusicTool {
-    static func pickApp(_ want: String?) -> String {
-        if let w = want?.lowercased() { return w.hasPrefix("spot") ? "Spotify" : "Music" }
-        let running = NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)
-        if running.contains("com.spotify.client") { return "Spotify" }
-        if running.contains("com.apple.Music") { return "Music" }
-        return FileManager.default.fileExists(atPath: "/Applications/Spotify.app") ? "Spotify" : "Music"
-    }
-
     static func run(_ a: [String]) throws -> String {
         let args = Args(a)
         let sub = args.pos.first ?? "now"
         let query = args.pos.dropFirst().joined(separator: " ")
-        let app = pickApp(args.o("app"))
-        let pretty = app == "Music" ? "Apple Music" : "Spotify"
-        func tell(_ cmd: String) throws -> String { try appleScript("tell application \"\(app)\"\n\(cmd)\nend tell") }
+        func tell(_ cmd: String) throws -> String { try appleScript("tell application \"Spotify\"\n\(cmd)\nend tell") }
         let nowScript = "if player state is playing then\nreturn (name of current track) & \" - \" & (artist of current track)\nelse\nreturn \"\"\nend if"
         switch sub {
         case "play", "riproduci", "metti":
             if query.isEmpty {
                 _ = try tell("play")
-                ActionLog.add("MUSIC", "Riproduzione su \(pretty)")
-                return "Riproduzione avviata su \(pretty)."
+                ActionLog.add("MUSIC", "Riproduzione su Spotify")
+                return "Riproduzione avviata su Spotify."
             }
-            if app == "Spotify" {
-                let q = query.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? query
-                _ = try runProcess("/usr/bin/open", ["spotify:search:\(q)"])
-                return "Spotify non permette di avviare un brano per nome: ho aperto la ricerca di \"\(query)\". Con Apple Music posso avviarlo direttamente (--app music)."
-            }
-            let out = try appleScript("""
-            on run argv
-              set q to item 1 of argv
-              tell application "Music"
-                try
-                  play playlist q
-                  return "playlist " & q
-                end try
-                set r to (every track of library playlist 1 whose name contains q or artist contains q or album contains q)
-                if (count of r) is 0 then return "NOTFOUND"
-                play item 1 of r
-                return (name of item 1 of r) & " - " & (artist of item 1 of r)
-              end tell
-            end run
-            """, [query])
-            if out == "NOTFOUND" { return "Nessun brano trovato per \"\(query)\" nella libreria di Apple Music." }
-            ActionLog.add("MUSIC", "In riproduzione: \(out)")
-            return "In riproduzione: \(out)."
+            let q = query.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? query
+            _ = try runProcess("/usr/bin/open", ["spotify:search:\(q)"])
+            return "Spotify non permette di avviare un brano per nome: ho aperto la ricerca di \"\(query)\"."
         case "pause", "pausa", "stop":
             _ = try tell("pause"); ActionLog.add("MUSIC", "Pausa"); return "Musica in pausa."
         case "toggle":
@@ -189,9 +159,9 @@ enum MusicTool {
             let n = try tell(nowScript); return n.isEmpty ? "Brano precedente." : "Ora: \(n)."
         case "now", "cosa", "brano":
             let n = try tell(nowScript)
-            return n.isEmpty ? "Nessun brano in riproduzione su \(pretty)." : "In riproduzione su \(pretty): \(n)."
+            return n.isEmpty ? "Nessun brano in riproduzione su Spotify." : "In riproduzione su Spotify: \(n)."
         default:
-            throw ToolError("uso: music play [testo]|pause|next|prev|now [--app spotify|music]")
+            throw ToolError("uso: music play [testo]|pause|next|prev|now")
         }
     }
 }
@@ -294,136 +264,6 @@ enum NotesTool {
             return "Testo aggiunto alla nota."
         default:
             throw ToolError("uso: note add|list|search|read|append")
-        }
-    }
-}
-
-// MARK: - News (RSS: Italian headlines + finance)
-
-enum NewsTool {
-    static let feeds: [String: [(String, String)]] = [
-        "italia": [("ANSA", "https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml"),
-                   ("Sole 24 Ore", "https://www.ilsole24ore.com/rss/italia.xml")],
-        "finanza": [("Sole 24 Ore", "https://www.ilsole24ore.com/rss/finanza.xml"),
-                    ("ANSA Economia", "https://www.ansa.it/sito/notizie/economia/economia_rss.xml")],
-    ]
-
-    struct Item { let source: String; let title: String; let link: String; let date: Date; let desc: String }
-
-    final class Parser: NSObject, XMLParserDelegate {
-        var items: [(title: String, link: String, date: String, desc: String)] = []
-        var cur: [String: String]? = nil
-        var text = ""
-        func parser(_ p: XMLParser, didStartElement e: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String] = [:]) {
-            if e == "item" { cur = [:] }
-            text = ""
-        }
-        func parser(_ p: XMLParser, foundCharacters s: String) { text += s }
-        func parser(_ p: XMLParser, foundCDATA d: Data) { text += String(decoding: d, as: UTF8.self) }
-        func parser(_ p: XMLParser, didEndElement e: String, namespaceURI: String?, qualifiedName: String?) {
-            if e == "item", let c = cur {
-                items.append((c["title"] ?? "", c["link"] ?? "", c["pubDate"] ?? "", c["description"] ?? ""))
-                cur = nil
-            } else if cur != nil, ["title", "link", "pubDate", "description"].contains(e) {
-                cur?[e] = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-        }
-    }
-
-    static func isWebLink(_ s: String) -> Bool {
-        guard let u = URL(string: s), let scheme = u.scheme?.lowercased() else { return false }
-        return scheme == "http" || scheme == "https"
-    }
-
-    static func fetch(_ url: String, timeout: TimeInterval = 8) -> Data? {
-        guard isWebLink(url), let u = URL(string: url) else { return nil }
-        var req = URLRequest(url: u, timeoutInterval: timeout)
-        req.setValue("Mozilla/5.0 (Macintosh) JARVIS", forHTTPHeaderField: "User-Agent")
-        let sem = DispatchSemaphore(value: 0)
-        var out: Data?
-        URLSession.shared.dataTask(with: req) { d, r, _ in
-            if (r as? HTTPURLResponse)?.statusCode == 200 { out = d }
-            sem.signal()
-        }.resume()
-        _ = sem.wait(timeout: .now() + timeout + 1)
-        return out
-    }
-
-    static func strip(_ s: String) -> String {
-        var t = s.replacing(/<[^>]+>/) { _ in " " }
-        for (k, v) in ["&amp;": "&", "&quot;": "\"", "&#39;": "'", "&apos;": "'", "&lt;": "<", "&gt;": ">", "&nbsp;": " ",
-                       "&egrave;": "è", "&eacute;": "é", "&agrave;": "à", "&ograve;": "ò", "&ugrave;": "ù", "&igrave;": "ì", "&rsquo;": "'", "&#8217;": "'", "&euro;": "€", "&laquo;": "«", "&raquo;": "»"] {
-            t = t.replacingOccurrences(of: k, with: v)
-        }
-        return t.replacing(/\s+/) { _ in " " }.trimmingCharacters(in: .whitespaces)
-    }
-
-    static func load(_ cats: [String]) -> [Item] {
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "en_US_POSIX")
-        df.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
-        var all: [Item] = []
-        let lock = NSLock()
-        let g = DispatchGroup()
-        for c in cats { for (src, url) in feeds[c] ?? [] {
-            g.enter()
-            DispatchQueue.global().async {
-                defer { g.leave() }
-                guard let d = fetch(url) else { return }
-                let p = Parser(); let xp = XMLParser(data: d); xp.delegate = p; xp.parse()
-                let items = p.items.map { Item(source: src, title: strip($0.title), link: $0.link,
-                                              date: df.date(from: $0.date) ?? .distantPast, desc: strip($0.desc)) }
-                lock.lock(); all += items; lock.unlock()
-            }
-        } }
-        g.wait()
-        var seen = Set<String>()
-        return all.sorted { $0.date > $1.date }.filter { seen.insert($0.title.lowercased()).inserted && !$0.title.isEmpty }
-    }
-
-    static func run(_ a: [String]) throws -> String {
-        let args = Args(a)
-        let first = args.pos.first ?? "tutte"
-        switch first {
-        case "read", "leggi", "open", "apri":
-            guard let r = args.pos.dropFirst().first, let stored = Refs.resolve(r) else { throw ToolError("uso: news read <n1>") }
-            let parts = stored.components(separatedBy: "\u{1}")
-            let link = parts[0], summary = parts.count > 2 ? "\(parts[1]). \(parts[2])" : ""
-            if first == "open" || first == "apri" {
-                guard isWebLink(link) else { throw ToolError("link non valido: apro solo indirizzi http/https") }
-                _ = try runProcess("/usr/bin/open", [link]); return "Articolo aperto nel browser."
-            }
-            // ANSA serves a consent wall to non-browser clients: its RSS summary is the reliable text.
-            if link.contains("ansa.it") { return summary.isEmpty ? "Sommario non disponibile." : "Sommario ANSA: \(summary)" }
-            guard let d = fetch(link, timeout: 10) else { throw ToolError("articolo non raggiungibile") }
-            let page = String(decoding: d, as: UTF8.self)
-            let boiler = /(?i)cookie|abbonament|privacy|consentless|condizioni generali|newsletter|accedi|registrati|riproduzione riservata|contenuti ogni|domande più frequenti|numero verde|email.*protected|siti internazionali|translated by ai/
-            let paras = page.matches(of: /<p[^>]*>([\s\S]*?)<\/p>/).map { strip(String($0.1)) }
-                .filter { $0.count > 120 && $0.firstMatch(of: boiler) == nil }
-            let text = paras.joined(separator: "\n")
-            if paras.count < 2 || text.count < 400 {
-                return summary.isEmpty ? "Testo completo non disponibile (paywall): con news open lo apro nel browser." :
-                    "Testo completo non disponibile (paywall). Sommario: \(summary)"
-            }
-            if text.count < 200 { return "Il sito non rende disponibile il testo completo (paywall o cookie): resta il sommario del titolo; con news open lo apro nel browser." }
-            return text.count > 3500 ? String(text.prefix(3500)) + " [...]" : text
-        default:
-            let cats: [String]
-            switch first {
-            case "finanza", "economia", "borsa", "mercati": cats = ["finanza"]
-            case "italia", "cronaca", "politica": cats = ["italia"]
-            default: cats = ["italia", "finanza"]
-            }
-            let n = Int(args.pos.dropFirst().first ?? args.o("n") ?? "") ?? 8
-            let items = load(cats)
-            if items.isEmpty { throw ToolError("nessuna notizia: fonti non raggiungibili") }
-            let shown = Array(items.prefix(min(n, 20)))
-            let refs = Refs.assign("n", shown.map { "\($0.link)\u{1}\($0.title)\u{1}\($0.desc)" })
-            let tf = DateFormatter(); tf.dateFormat = "HH:mm"
-            return zip(refs, shown).map { ref, it in
-                let d = it.desc.count > 130 ? String(it.desc.prefix(130)) + "..." : it.desc
-                return "[\(ref)] \(tf.string(from: it.date)) \(it.source): \(it.title)\(d.isEmpty || d == it.title ? "" : " | " + d)"
-            }.joined(separator: "\n")
         }
     }
 }
