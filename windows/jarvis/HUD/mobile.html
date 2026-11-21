@@ -2,92 +2,237 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="JARVIS">
+<meta name="theme-color" content="#02070F">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>J.A.R.V.I.S.</title>
 <style>
-  :root { --c: #00E5FF; --c-rgb: 0,229,255; --bg: #030811; }
-  body.busy { --c: #FFB800; --c-rgb: 255,184,0; }
-  body.alert { --c: #FF2A2A; --c-rgb: 255,42,42; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: #CFF8FF; font-family: -apple-system, "SF Mono", Menlo, monospace; }
-  body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 12px);
-    background-image: linear-gradient(rgba(var(--c-rgb),.05) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--c-rgb),.05) 1px, transparent 1px);
-    background-size: 24px 24px; transition: background-color .4s; }
-  header { text-align: center; padding: 18px 0 8px; }
-  .logo { color: var(--c); letter-spacing: .4em; font-weight: 300; font-size: 22px; text-shadow: 0 0 12px rgba(var(--c-rgb),.7); }
-  .sub { font-size: 9px; letter-spacing: .25em; color: rgba(var(--c-rgb),.5); margin-top: 4px; }
-  .core { width: 120px; height: 120px; margin: 18px auto; border-radius: 50%; position: relative;
-    background: radial-gradient(circle, #fff 0, var(--c) 18%, rgba(var(--c-rgb),.25) 45%, transparent 70%);
-    animation: breathe 2.4s ease-in-out infinite; }
-  .core::before, .core::after { content: ""; position: absolute; inset: -14px; border-radius: 50%; border: 2px dashed rgba(var(--c-rgb),.6); animation: spin 12s linear infinite; }
-  .core::after { inset: -28px; border: 1px solid rgba(var(--c-rgb),.25); border-top-color: var(--c); animation-duration: 5s; animation-direction: reverse; }
-  body.busy .core::before, body.busy .core::after { animation-duration: 1.5s; }
-  #log { flex: 1; overflow-y: auto; font-size: 15px; line-height: 1.45; padding: 4px 2px; }
-  .me { color: rgba(var(--c-rgb),.6); margin: 10px 0 2px; font-size: 13px; }
-  .me::before { content: "TU // "; }
-  .j { margin-bottom: 8px; }
-  .j::before { content: "JARVIS // "; color: var(--c); font-size: 11px; letter-spacing: .15em; }
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0; }
-  .chip { flex: none; border: 1px solid rgba(var(--c-rgb),.4); color: var(--c); background: rgba(var(--c-rgb),.06); padding: 8px 12px; font-size: 12px; border-radius: 4px; }
-  .confirm { display: none; gap: 10px; padding: 8px 0; }
+  :root { --c: #00E5FF; --c-rgb: 0,229,255; --bg: #02070F; --text: #D6FAFF; --dim: rgba(0,229,255,.5);
+    --mono: "Cascadia Mono", Consolas, "SF Mono", ui-monospace, Menlo, monospace; }
+  body.busy  { --c: #FFB800; --c-rgb: 255,184,0; --dim: rgba(255,184,0,.55); }
+  body.alert { --c: #FF2A2A; --c-rgb: 255,42,42; --dim: rgba(255,42,42,.6); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); }
+  body { font: 15px/1.45 -apple-system, "SF Pro Text", sans-serif; display: flex; flex-direction: column; height: 100dvh;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    background: radial-gradient(ellipse at 50% -10%, rgba(var(--c-rgb), .16), transparent 60%), var(--bg); transition: background .5s; }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+  /* header */
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 16px 10px; border-bottom: 1px solid rgba(var(--c-rgb), .2); }
+  .reactor { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 0 6px rgba(var(--c-rgb), .8)); }
+  .reactor circle { fill: none; stroke: var(--c); transform-origin: 20px 20px; transition: stroke .5s; }
+  .r-out { stroke-width: 1; stroke-dasharray: 2 2.7; opacity: .7; animation: spin 14s linear infinite; }
+  .r-seg { stroke-width: 3; stroke-dasharray: 9 4.6; animation: spin 5s linear infinite reverse; }
+  .r-core { fill: rgba(var(--c-rgb), .55) !important; stroke: #fff !important; stroke-width: 1.2; animation: breathe 2.4s ease-in-out infinite; }
+  body.busy .r-seg { animation-duration: 1s; } body.busy .r-out { animation-duration: 3s; }
+  .title { flex: 1; min-width: 0; }
+  .logo { font: 200 20px -apple-system, sans-serif; letter-spacing: .38em; color: var(--c); text-shadow: 0 0 10px rgba(var(--c-rgb), .6); }
+  .status { font: 9.5px var(--mono); letter-spacing: .2em; color: var(--dim); display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .status i { width: 6px; height: 6px; border-radius: 50%; background: #FF4D4D; box-shadow: 0 0 6px #FF4D4D; }
+  .status.ok i { background: #2BFF88; box-shadow: 0 0 6px #2BFF88; }
+  .icon { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(var(--c-rgb), .35); border-radius: 10px; color: var(--c); }
+  .icon svg { width: 20px; height: 20px; }
+  .icon.off { opacity: .4; }
+
+  /* chat */
+  #log { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 88%; animation: msgIn .3s ease; }
+  .who { font: 9px var(--mono); letter-spacing: .2em; color: var(--dim); margin-bottom: 3px; }
+  .body { white-space: pre-wrap; word-break: break-word; padding: 9px 12px; border-radius: 12px; -webkit-user-select: text; user-select: text; }
+  .me { align-self: flex-end; text-align: right; }
+  .me .body { background: rgba(var(--c-rgb), .14); border: 1px solid rgba(var(--c-rgb), .3); border-bottom-right-radius: 3px; text-align: left; }
+  .j .who { color: var(--c); }
+  .j .body { background: linear-gradient(90deg, rgba(var(--c-rgb), .1), rgba(var(--c-rgb), .03)); border-left: 2px solid var(--c); border-radius: 3px 12px 12px 3px; }
+  .j.err .body { border-left-color: #FF4D4D; color: #FFC9C9; background: rgba(255, 77, 77, .08); }
+  .pending .body { color: var(--dim); font: 11px var(--mono); letter-spacing: .25em; }
+  .pending .body i { display: inline-block; width: 5px; height: 5px; margin-left: 5px; background: var(--c); animation: blink 1s infinite; }
+  .pending .body i:nth-child(2) { animation-delay: .2s; } .pending .body i:nth-child(3) { animation-delay: .4s; }
+  .sys { align-self: center; font: 9px var(--mono); letter-spacing: .25em; color: var(--dim); }
+
+  /* bottom */
+  .bottom { padding: 6px 12px 10px; border-top: 1px solid rgba(var(--c-rgb), .15); background: rgba(2, 7, 15, .85); }
+  .confirm { display: none; gap: 10px; margin-bottom: 8px; }
   body.alert .confirm { display: flex; }
-  .confirm button { flex: 1; padding: 14px; font-size: 15px; border: 1px solid #FF2A2A; color: #fff; background: rgba(255,42,42,.35); border-radius: 4px; }
+  .confirm button { flex: 1; padding: 14px; font-weight: 600; letter-spacing: .12em; border-radius: 10px; border: 1px solid #FF2A2A; color: #fff; background: rgba(255, 42, 42, .4); }
   .confirm button.no { background: transparent; color: #FFB3B3; }
-  form { display: flex; gap: 8px; border: 1px solid rgba(var(--c-rgb),.45); background: rgba(var(--c-rgb),.06); padding: 6px; border-radius: 6px; }
-  input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 17px; padding: 8px; }
-  form button { background: var(--c); color: var(--bg); border: none; font-weight: 600; padding: 0 16px; border-radius: 4px; font-size: 15px; }
-  .hint { text-align: center; font-size: 10px; color: rgba(var(--c-rgb),.45); margin-top: 8px; letter-spacing: .1em; }
-  .up { color: #2BFF88; } .down { color: #FF4D4D; }
-  .core { width: 90px; height: 90px; }
-  @keyframes breathe { 50% { transform: scale(1.06); } }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; font-size: 13px; padding: 7px 12px; border-radius: 16px; color: var(--c); border: 1px solid rgba(var(--c-rgb), .35); background: rgba(var(--c-rgb), .06); }
+  .chip:active { background: rgba(var(--c-rgb), .25); }
+  form { display: flex; align-items: flex-end; gap: 8px; }
+  textarea { flex: 1; resize: none; max-height: 120px; min-height: 44px; font: 17px/1.35 -apple-system, sans-serif; color: #fff; background: rgba(var(--c-rgb), .07);
+    border: 1px solid rgba(var(--c-rgb), .4); border-radius: 22px; padding: 11px 16px; outline: none; }
+  textarea:focus { border-color: var(--c); }
+  textarea::placeholder { color: rgba(var(--c-rgb), .4); }
+  .send { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--c); color: var(--bg); display: grid; place-items: center; box-shadow: 0 0 14px rgba(var(--c-rgb), .5); transition: background .5s; }
+  .send svg { width: 20px; height: 20px; }
+  .send:disabled { opacity: .35; box-shadow: none; }
+
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes breathe { 50% { opacity: .5; } }
+  @keyframes blink { 50% { opacity: .3; } }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } }
 </style>
 </head>
 <body>
-<header><div class="logo">J.A.R.V.I.S.</div><div class="sub">CONNESSO AL PC // RETE LOCALE</div></header>
-<div class="core"></div>
-<div id="log"></div>
-<div class="chips">
-  <button class="chip">Briefing</button><button class="chip">Impegni di oggi</button><button class="chip">Mail non lette</button>
-  <button class="chip">Promemoria da fare</button>
-</div>
-<div class="confirm"><button id="yes">CONFERMA</button><button id="no" class="no">ANNULLA</button></div>
-<form id="f"><input id="t" placeholder="Comando (usa il microfono della tastiera)" autocomplete="off"><button>INVIA</button></form>
-<div class="hint">TOCCA IL MICROFONO DELLA TASTIERA PER DETTARE</div>
-<script>
-const TOKEN = "__TOKEN__";
-const log = document.getElementById("log");
-function add(cls, text) { const d = document.createElement("div"); d.className = cls; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; }
-function say(text) {
-  if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/\[[a-z]{1,2}\d+\]/g, ""));
-  u.lang = "it-IT"; u.rate = 1.05;
-  speechSynthesis.speak(u);
-}
-async function ask(text) {
-  add("me", text);
-  document.body.className = "busy";
-  try {
-    const r = await fetch("/ask", { method: "POST", headers: { "Authorization": "Bearer " + TOKEN, "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-    const reply = await r.text();
-    add("j", reply);
-    document.body.className = /conferma|confermi|procedo\?/i.test(reply) ? "alert" : "";
-    say(reply);
-  } catch (e) {
-    document.body.className = "";
-    add("j", "PC non raggiungibile: deve essere acceso, sveglio e sulla stessa rete (o su Tailscale).");
-  }
-}
-document.getElementById("f").onsubmit = (e) => { e.preventDefault(); const t = document.getElementById("t"); const v = t.value.trim(); if (v) { t.value = ""; ask(v); } };
-document.querySelectorAll(".chip").forEach((b) => b.onclick = () => ask(b.textContent));
-document.getElementById("yes").onclick = () => ask("sì");
-document.getElementById("no").onclick = () => ask("no");
-add("j", "Collegato, signore. Come posso aiutarla?");
+<header>
+  <svg class="reactor" viewBox="0 0 40 40" aria-hidden="true">
+    <circle cx="20" cy="20" r="18" class="r-out"/><circle cx="20" cy="20" r="13" class="r-seg"/><circle cx="20" cy="20" r="6" class="r-core"/>
+  </svg>
+  <div class="title">
+    <div class="logo">J.A.R.V.I.S.</div>
+    <div class="status" id="status"><i></i><span id="status-text">VERIFICA COLLEGAMENTO</span></div>
+  </div>
+  <button class="icon" id="voice" title="Lettura vocale delle risposte" aria-label="Voce">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>
+    </svg>
+  </button>
+  <button class="icon" id="clear" title="Pulisci la chat" aria-label="Pulisci">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
+    </svg>
+  </button>
+</header>
 
+<div id="log"></div>
+
+<div class="bottom">
+  <div class="confirm"><button id="yes">CONFERMA</button><button id="no" class="no">ANNULLA</button></div>
+  <div class="chips">
+    <button class="chip" data-q="Briefing">Briefing</button>
+    <button class="chip" data-q="Quali impegni ho oggi?">Impegni di oggi</button>
+    <button class="chip" data-q="Che compiti ho da fare?">Compiti</button>
+    <button class="chip" data-q="Ho mail non lette?">Mail non lette</button>
+  </div>
+  <form id="f">
+    <textarea id="t" rows="1" placeholder="Scrivi o detta un comando" autocomplete="off" enterkeyhint="send"></textarea>
+    <button class="send" id="send" aria-label="Invia">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+  </form>
+</div>
+
+<script>
+(() => {
+  const TOKEN = "__TOKEN__";
+  const $ = (id) => document.getElementById(id);
+  const log = $("log"), KEY = "jarvis.mobile.chat", MAX = 80;
+  let items = [];
+  try { items = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { items = []; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(items.slice(-MAX))); } catch (e) {} };
+  const hm = (ts) => new Date(ts).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const toBottom = () => requestAnimationFrame(() => log.scrollTo({ top: log.scrollHeight, behavior: "smooth" }));
+
+  function node(k, text, ts, err) {
+    const d = document.createElement("div");
+    if (k === "sys") { d.className = "sys"; d.textContent = text; return d; }
+    d.className = "msg " + k + (err ? " err" : "");
+    d.innerHTML = '<div class="who"></div><div class="body"></div>';
+    d.querySelector(".who").textContent = (k === "me" ? "TU" : "J.A.R.V.I.S.") + " // " + hm(ts);
+    d.querySelector(".body").textContent = text;
+    return d;
+  }
+  function add(k, text, opt = {}) {
+    const ts = Date.now();
+    log.appendChild(node(k, text, ts, opt.err));
+    if (opt.save !== false) { items.push({ k, text, ts }); if (items.length > MAX) items.splice(0, items.length - MAX); save(); }
+    toBottom();
+  }
+
+  // ---------------- voice output (toggle, remembered)
+  let voice = localStorage.getItem("jarvis.mobile.voice") !== "0";
+  const paintVoice = () => { $("voice").classList.toggle("off", !voice); $("voice").querySelector(".wave").style.display = voice ? "" : "none"; };
+  $("voice").onclick = () => { voice = !voice; localStorage.setItem("jarvis.mobile.voice", voice ? "1" : "0"); if (!voice && window.speechSynthesis) speechSynthesis.cancel(); paintVoice(); };
+  paintVoice();
+  function say(text) {
+    if (!voice || !("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/\[[a-z]{1,2}\d+\]/g, ""));
+    u.lang = "it-IT"; u.rate = 1.05;
+    speechSynthesis.speak(u);
+  }
+
+  // ---------------- connection status
+  async function ping() {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 4000);
+    try {
+      const r = await fetch("/ping", { headers: { Authorization: "Bearer " + TOKEN }, signal: ctl.signal, cache: "no-store" });
+      setStatus(r.ok);
+    } catch (e) { setStatus(false); }
+    clearTimeout(to);
+  }
+  function setStatus(ok) {
+    $("status").classList.toggle("ok", ok);
+    $("status-text").textContent = ok ? "ONLINE // PC COLLEGATO" : "PC NON RAGGIUNGIBILE";
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) ping(); });
+  setInterval(() => { if (!document.hidden && !busy) ping(); }, 30000);
+
+  // ---------------- ask
+  let busy = false, pendingEl = null;
+  function setBusy(on) {
+    busy = on; $("send").disabled = on;
+    document.body.classList.toggle("busy", on);
+    if (on) {
+      pendingEl = document.createElement("div");
+      pendingEl.className = "msg j pending";
+      pendingEl.innerHTML = '<div class="who">J.A.R.V.I.S.</div><div class="body">ELABORAZIONE<i></i><i></i><i></i></div>';
+      log.appendChild(pendingEl); toBottom();
+    } else if (pendingEl) { pendingEl.remove(); pendingEl = null; }
+  }
+  async function ask(text) {
+    if (busy) return;
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    document.body.classList.remove("alert");
+    add("me", text);
+    setBusy(true);
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 290000);
+    try {
+      const r = await fetch("/ask", { method: "POST", signal: ctl.signal,
+        headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const reply = (await r.text()).trim();
+      setBusy(false); setStatus(true);
+      if (!r.ok) { add("j", reply || "Errore " + r.status, { err: true }); return; }
+      add("j", reply);
+      document.body.classList.toggle("alert", /conferma|confermi|procedo\?/i.test(reply));
+      say(reply);
+    } catch (e) {
+      setBusy(false); setStatus(false);
+      add("j", "PC non raggiungibile. Deve essere acceso e sveglio, con JARVIS aperta, e il telefono sulla stessa rete Wi-Fi (o su Tailscale).", { err: true, save: false });
+    }
+    clearTimeout(to);
+  }
+
+  // ---------------- input
+  const t = $("t");
+  const grow = () => { t.style.height = "auto"; t.style.height = Math.min(120, t.scrollHeight) + "px"; };
+  t.addEventListener("input", grow);
+  t.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("f").requestSubmit(); } });
+  $("f").onsubmit = (e) => { e.preventDefault(); const v = t.value.trim(); if (!v) return; t.value = ""; grow(); ask(v); };
+  document.querySelectorAll(".chip").forEach((b) => b.onclick = () => ask(b.dataset.q));
+  $("yes").onclick = () => ask("sì");
+  $("no").onclick = () => ask("no");
+  let armed = 0;
+  $("clear").onclick = () => {
+    if (Date.now() - armed > 2500) { armed = Date.now(); $("clear").style.borderColor = "#FF2A2A"; setTimeout(() => $("clear").style.borderColor = "", 2500); return; }
+    items = []; save(); log.innerHTML = ""; add("j", "Cronologia ripulita, signore.", { save: false });
+  };
+
+  // ---------------- boot
+  items.forEach((e) => log.appendChild(node(e.k, e.text, e.ts)));
+  if (!items.length) {
+    const h = new Date().getHours();
+    add("j", (h < 6 ? "Buonanotte" : h < 13 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera") + ", signore. Come posso aiutarla?", { save: false });
+  }
+  log.scrollTop = log.scrollHeight;
+  ping();
+})();
 </script>
 </body>
 </html>

@@ -105,7 +105,7 @@ class App:
             on_partial=lambda t: self.send({"type": "user", "text": t}), on_command=self._on_voice_command,
             on_listening=self._on_listening, on_wake=self.show, on_error=self._on_voice_error)
         self.proactive = Proactive(self.prefs, self._on_alert, lambda: self.briefing_now(), self.notify)
-        self.remote = RemoteServer(self._mobile_page, self._remote_handler)
+        self.remote = RemoteServer(self._mobile_page, self._remote_handler, self._touch_icon)
 
     # ------------------------------------------------------------------ avvio
 
@@ -210,6 +210,13 @@ class App:
             self.toggle_mic()
         elif t == "stopSpeech":
             self.speech.stop()
+        elif t == "clearFeed":
+            # nasconde le voci registrate finora, anche dopo il riavvio; actions.log resta su disco
+            try:
+                size = Paths.file("actions.log").stat().st_size
+            except OSError:
+                size = self.feed_offset
+            self.prefs.set("feedClearedOffset", int(size))
 
     def model_label(self, tier: Tier | None = None) -> str:
         tier = tier or self.brain.default_tier
@@ -243,9 +250,20 @@ class App:
         except OSError:
             return
         if initial:
+            # ultime ~150 voci dopo l'ultimo CLEAR (il file non viene mai cancellato)
+            try:
+                cleared = max(0, int(self.prefs.get("feedClearedOffset", 0) or 0))
+            except (TypeError, ValueError):
+                cleared = 0
+            if cleared > size:
+                cleared = 0                     # log ruotato o sostituito
+            start = max(size - 60000 if size > 60000 else 0, cleared)
             with open(path, "rb") as f:
-                f.seek(max(0, size - 4000))
-                lines = f.read().decode("utf-8", errors="replace").splitlines()[-12:]
+                f.seek(start)
+                chunk = f.read().decode("utf-8", errors="replace")
+            if start > cleared and "\n" in chunk:
+                chunk = chunk.split("\n", 1)[1]    # scarta la riga tagliata a metà
+            lines = chunk.splitlines()[-150:]
             for ln in lines:
                 o = self._parse_feed(ln)
                 if o:
@@ -406,6 +424,17 @@ class App:
             return (HUD_DIR / "mobile.html").read_text(encoding="utf-8")
         except OSError:
             return "JARVIS"
+
+    def _touch_icon(self) -> bytes:
+        """Icona 180x180 per 'Aggiungi alla schermata Home' (stesso disegno dell'icona nella barra)."""
+        import io
+        from PIL import Image
+        bg = Image.new("RGBA", (180, 180), (3, 8, 17, 255))
+        img = self._tray_image().resize((180, 180), Image.LANCZOS)
+        bg.alpha_composite(img)
+        buf = io.BytesIO()
+        bg.convert("RGB").save(buf, "PNG")
+        return buf.getvalue()
 
     def _remote_handler(self, text: str, as_json: bool, reply) -> None:
         self.send({"type": "user", "text": "TELEFONO // " + text})

@@ -558,5 +558,54 @@ class QuickFixTests(unittest.TestCase):
         self.assertIn('add_hotkey("alt+shift+space"', src)
 
 
+
+class RemoteServerTests(unittest.TestCase):
+    """Server del telefono: /ping vuole il token, l'icona della schermata Home no."""
+
+    def test_ping_and_icon(self):
+        import socket
+        import urllib.error
+        import urllib.request
+        from jarvis.app import remote
+        s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close()
+        old = remote.PORT
+        remote.PORT = port
+        srv = remote.RemoteServer(lambda: "<html>__TOKEN__</html>", lambda *a: None, lambda: b"\x89PNG-test")
+        try:
+            srv.start()
+            base = f"http://127.0.0.1:{port}"
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen(base + "/ping", timeout=5)
+            self.assertEqual(e.exception.code, 401)
+            req = urllib.request.Request(base + "/ping", headers={"Authorization": "Bearer " + srv.token})
+            self.assertEqual(urllib.request.urlopen(req, timeout=5).read(), b"ok")
+            r = urllib.request.urlopen(base + "/apple-touch-icon.png", timeout=5)
+            self.assertEqual(r.headers["Content-Type"], "image/png")
+            self.assertEqual(r.read(), b"\x89PNG-test")
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen(base + "/", timeout=5)
+            self.assertEqual(e.exception.code, 401)
+        finally:
+            srv.stop()
+            remote.PORT = old
+
+
+class HudParityTests(unittest.TestCase):
+    """L'HUD di Windows deve restare uguale a quello del Mac: cambiano solo ponte, font e testi di sistema."""
+
+    def test_same_files_and_layout(self):
+        root = Path(__file__).resolve().parents[2]
+        mac, win = root / "macos" / "HUD", root / "windows" / "jarvis" / "HUD"
+        if not mac.is_dir():
+            self.skipTest("cartella macos/ assente")
+        self.assertEqual(sorted(p.name for p in mac.iterdir()), sorted(p.name for p in win.iterdir()))
+        ids = lambda p: re.findall(r'id="([^"]+)"', p.read_text(encoding="utf-8"))
+        for f in ("index.html", "mobile.html"):
+            self.assertEqual(ids(mac / f), ids(win / f), f)
+        js = (win / "hud.js").read_text(encoding="utf-8")
+        self.assertIn("window.pywebview", js)
+        self.assertNotIn("webkit.messageHandlers", js)
+
+
 if __name__ == "__main__":
     unittest.main()
