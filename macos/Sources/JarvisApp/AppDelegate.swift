@@ -435,10 +435,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         defer { try? h.close() }
         let size = (try? h.seekToEnd()) ?? 0
         if initial {
-            // last ~12 entries, not marked fresh
-            let start = size > 4000 ? size - 4000 : 0
+            // last ~150 entries after the last CLEAR, not marked fresh (the log file itself is never deleted)
+            var cleared = UInt64(max(0, UserDefaults.standard.integer(forKey: "feedClearedOffset")))
+            if cleared > size { cleared = 0 }   // log was rotated or replaced
+            let start = max(size > 60000 ? size - 60000 : 0, cleared)
             try? h.seek(toOffset: start)
-            let lines = String(decoding: h.readDataToEndOfFile(), as: UTF8.self).split(separator: "\n").suffix(12)
+            var chunk = String(decoding: h.readDataToEndOfFile(), as: UTF8.self)
+            if start > cleared, let nl = chunk.firstIndex(of: "\n") { chunk = String(chunk[chunk.index(after: nl)...]) }  // drop partial line
+            let lines = chunk.split(separator: "\n").suffix(150)
             for l in lines { if var o = parse(l) { o["fresh"] = false; send(o) } }
             feedOffset = size
             return
@@ -481,6 +485,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case "hide": voice.stopSpeaking(); if voice.capturing { voice.cancelListening() } else { hide() }
         case "mic": toggleMic()
         case "stopSpeech": voice.stopSpeaking()
+        case "clearFeed":
+            // hide everything logged so far, also after a restart; actions.log stays on disk
+            let attrs = try? FileManager.default.attributesOfItem(atPath: Paths.file("actions.log").path)
+            let size = (attrs?[.size] as? NSNumber)?.intValue ?? Int(feedOffset)
+            UserDefaults.standard.set(size, forKey: "feedClearedOffset")
         default: break
         }
     }
@@ -697,9 +706,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let a = NSAlert()
         a.messageText = "Collega l'iPhone a J.A.R.V.I.S."
         a.informativeText = """
-        1. iPhone sulla stessa rete Wi-Fi del Mac.
+        1. iPhone sulla stessa rete Wi-Fi del Mac (con i dati cellulari non funziona).
         2. Inquadra il codice con la Fotocamera e apri il link in Safari.
         3. Condividi > Aggiungi alla schermata Home: avrai l'app JARVIS.
+
+        Se Safari dice che non riesce a connettersi: Impostazioni di Sistema > Privacy e sicurezza > Rete locale > attiva JARVIS. Se ancora non va, la rete Wi-Fi isola i dispositivi (succede a scuola o negli hotel): usa l'hotspot dell'iPhone o Tailscale.
 
         Link: \(url)
         Alternativa: \(remote.url(host: RemoteServer.bonjourName))

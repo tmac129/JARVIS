@@ -13,3 +13,5 @@ config.json
 *.tar.gz
 __pycache__/
 .venv/
+*.egg-info/
+build/

@@ -64,7 +64,7 @@ Il briefing si può far partire in qualsiasi momento ("briefing") o disattivare 
 
 ## Funzioni
 
-- **HUD**: finestra con nucleo animato, telemetria (CPU, memoria, batteria, rete), feed delle azioni e trascrizione. macOS: ⌥Spazio o ⌘⇧J. Windows: Ctrl+Maiusc+J (Alt+Spazio resta al menu finestra di Windows).
+- **HUD**: finestra con nucleo animato, telemetria (CPU, memoria, batteria, rete), feed delle azioni e trascrizione (su macOS: chat con cronologia scorrevole, globo animato e pulsanti CLEAR per chat e feed). macOS: ⌥Spazio o ⌘⇧J. Windows: Ctrl+Maiusc+J (Alt+Spazio resta al menu finestra di Windows).
 - **Voce**: push-to-talk (macOS ⌥⇧Spazio, Windows Alt+Maiusc+Spazio) e ascolto continuo opzionale della parola "Jarvis". Il riconoscimento avviene sul computer: Speech su macOS, Vosk con modello italiano offline su Windows. Le risposte sono lette ad alta voce.
 - **Router a più livelli**: Haiku per i comandi normali, Sonnet per analisi e testi. Opus (ragionamento approfondito) e Fable (massima capacità, costo più alto) si usano solo con `/opus` o `/fable`. `/sonnet`, `/haiku`, `/opus` e `/fable` forzano il modello.
 - **Iniziativa**: briefing del mattino, avviso 15 minuti prima degli impegni, avviso di batteria scarica.
@@ -133,6 +133,7 @@ Al primo avvio macOS chiede i permessi solo quando servono:
 | Accessibilità | luminosità, invio automatico su WhatsApp |
 | Registrazione schermo | "cosa c'è sullo schermo?" |
 | Microfono e Riconoscimento vocale | comandi a voce |
+| Rete locale | ricevere i comandi dal telefono sulla stessa rete Wi-Fi |
 | Accesso completo al disco (opzionale) | lettura veloce di Mail e WhatsApp dai loro database |
 
 Nessuna dipendenza di terze parti: solo framework Apple (AppKit, WebKit, EventKit, PDFKit, Speech, Network) e SQLite di sistema.
@@ -262,6 +263,7 @@ Il menu **Permessi e configurazione** controlla (in sola lettura) microfono, not
 - **HUD**: richiama con la scorciatoia (vedi sopra), scrivi o premi MIC. ESC nasconde.
 - **Terminale**: `jarvis help` mostra tutti i comandi. `jarvis chat` apre una conversazione, `jarvis ask "..."` invia una domanda singola.
 - **Telefono**: menu JARVIS (barra dei menu su Mac, icona nella barra su Windows) > Telefono > "Accesso dal telefono attivo", poi "Collega telefono (codice QR)".
+  Su macOS, se Safari sul telefono non riesce a connettersi: **Impostazioni di Sistema > Privacy e sicurezza > Rete locale** e attiva JARVIS. Il telefono deve essere sulla stessa rete Wi-Fi (con i dati cellulari serve Tailscale); alcune reti di scuole e hotel isolano i dispositivi.
 
 Esempi: "che impegni ho domani?", "manda una mail a Marco con la relazione allegata", "sposta i pdf della scrivania nella cartella Scuola", "metti una sveglia alle 7", "briefing".
 
@@ -277,6 +279,7 @@ Un modulo disattivato sparisce dalle istruzioni date a Claude e dal briefing, e 
 - **Claude con permessi minimi**: il solo strumento `Bash` limitato al comando `jarvis` (in più `Read`, solo per le richieste che leggono lo schermo), nessun server MCP, `jarvis confirm` vietato. In più il comando rifiuta le conferme quando lo chiama il modello.
 - **Testi non fidati**: il prompt di sistema tratta mail, chat, pagine web e documenti come dati, non come istruzioni. Resta comunque un sistema basato su un modello linguistico: leggi sempre il riepilogo prima di confermare.
 - **Server per il telefono**: spento di default. Usa un token casuale e HTTP in chiaro sulla rete locale. Attivalo solo su reti fidate o tramite Tailscale, non esporre mai la porta 8787 su Internet e non condividere il link con il token.
+- **Cronologia della chat**: l'HUD su macOS (ultimi 160 messaggi) e la pagina del telefono (ultimi 80) salvano la conversazione nella memoria locale della pagina, quindi possono contenere estratti di mail o messaggi. Il pulsante CLEAR (due clic) la cancella. Su macOS, con l'accesso dal telefono attivo, JARVIS si annuncia sulla rete locale (Bonjour, `_jarvis._tcp`) per ottenere il permesso Rete locale; senza token il server non risponde.
 - **Dati locali**: preferenze, log delle azioni, token e stato sono nella cartella dati dell'utente (vedi sopra), mai nel repository. Su Windows il token Google è in `google_token.json` in quella cartella: trattalo come una password. I testi delle richieste passano dalla CLI di Claude Code secondo le condizioni del tuo account.
 - **Login**: i login di Claude e di Google li esegui tu, dal terminale; il modello non può avviarli.
 

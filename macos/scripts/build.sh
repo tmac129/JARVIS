@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Builds JARVIS.app (HUD + jarvis CLI) into /Applications and links the CLI into ~/.local/bin.
-# macOS only (AppKit, EventKit, AppleScript, launchd): on Windows use scripts\build.bat for an explanation.
+# macOS only (AppKit, EventKit, AppleScript, launchd): on Windows see windows/README.md and windows\install.bat.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

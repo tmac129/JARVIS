@@ -32,6 +32,12 @@
 	<string>J.A.R.V.I.S. legge i documenti che gli chiedi di aprire.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>J.A.R.V.I.S. riceve i comandi dal tuo iPhone sulla stessa rete Wi-Fi.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_jarvis._tcp</string>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>J.A.R.V.I.S. ascolta i comandi vocali quando attivi il microfono.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
