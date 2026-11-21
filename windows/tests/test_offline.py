@@ -215,6 +215,15 @@ class GateTests(unittest.TestCase):
         gate.cancel_all()
         self.assertIsNone(gate.latest_id())
 
+    def test_sys_open_path_needs_confirmation(self):
+        # Il nome di un'app e' immediato, ma un percorso, un indirizzo o un protocollo potrebbe avviare
+        # un eseguibile o uno script scaricato: serve la conferma, come per `file open`.
+        for target in (r"C:\Users\me\Downloads\setup.exe", r"\\server\share\x.bat", "https://example.com",
+                       "ms-settings:privacy", "..\\x.cmd", "%TEMP%\\a.js", "~/a.vbs"):
+            out, _ = cli.run(["sys", "open", target])
+            self.assertIn(gate.MARKER, out, target)
+            gate.cancel_all()
+
     def test_cancel(self):
         cli.run(["file", "trash", str(Path(os.environ["HOME"]) / "inesistente.txt")])   # errore: niente richiesta
         self.assertIsNone(gate.latest_id())
