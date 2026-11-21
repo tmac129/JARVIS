@@ -1,6 +1,8 @@
 """Piccolo server HTTP sulla rete locale per usare JARVIS dal telefono.
 
   GET  /?token=...   web app mobile (da aggiungere alla schermata Home)
+  GET  /ping         controllo del collegamento (con token)
+  GET  /apple-touch-icon.png   icona per la schermata Home (senza token: non contiene dati)
   POST /ask          corpo: testo oppure {"text": "..."}; header "Authorization: Bearer <token>" oppure ?token=
 Stesso cervello e stessa conferma delle azioni critiche. Spento finche' non lo attivi dal menu.
 ATTENZIONE: e' HTTP in chiaro: usalo solo su una rete di cui ti fidi (o tramite Tailscale).
@@ -55,8 +57,10 @@ def same_token(a: str | None, b: str) -> bool:
 
 
 class RemoteServer:
-    def __init__(self, page_html, handler):
-        """page_html() -> str; handler(text, as_json, reply_callback)."""
+    def __init__(self, page_html, handler, icon_png=None):
+        """page_html() -> str; handler(text, as_json, reply_callback); icon_png() -> bytes (facoltativo)."""
+        self._icon = icon_png
+        self._icon_cache: bytes | None = None
         self.token = get_token()
         self._page = page_html
         self._handler = handler
@@ -65,6 +69,14 @@ class RemoteServer:
     @property
     def is_running(self) -> bool:
         return self._httpd is not None
+
+    def icon_png(self) -> bytes:
+        if self._icon_cache is None:
+            try:
+                self._icon_cache = self._icon() if self._icon else b""
+            except Exception:
+                self._icon_cache = b""
+        return self._icon_cache
 
     def url(self, host: str) -> str:
         return f"http://{host}:{PORT}/?token={self.token}"
@@ -81,8 +93,8 @@ class RemoteServer:
             def log_message(self, *a):      # niente log in console
                 pass
 
-            def _send(self, code: int, ctype: str, body: str) -> None:
-                b = body.encode("utf-8")
+            def _send(self, code: int, ctype: str, body: str | bytes) -> None:
+                b = body if isinstance(body, bytes) else body.encode("utf-8")
                 self.send_response(code)
                 self.send_header("Content-Type", ctype)
                 self.send_header("Content-Length", str(len(b)))
@@ -101,8 +113,14 @@ class RemoteServer:
             def do_GET(self):
                 u = urlparse(self.path)
                 q = parse_qs(u.query)
+                # icona della schermata Home: Safari la chiede senza token e non contiene nulla di privato
+                if u.path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
+                    png = server.icon_png()
+                    return self._send(200, "image/png", png) if png else self._send(404, "text/plain", "Non trovato.")
                 if not self._auth(q):
                     return self._send(401, "text/plain", "Token mancante o errato.")
+                if u.path == "/ping":
+                    return self._send(200, "text/plain", "ok")
                 if u.path == "/":
                     return self._send(200, "text/html; charset=utf-8", server._page().replace("__TOKEN__", server.token))
                 self._send(404, "text/plain", "Non trovato.")
