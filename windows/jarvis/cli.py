@@ -45,7 +45,7 @@ _TOOLS = {
     "screen": ("screen", "run"), "schermo": ("screen", "run"),
     "google": ("google_cmd", "run"),
 }
-_NEEDS_GATE = {"mail", "cal", "calendar", "rem", "reminder", "reminders", "alarm", "sveglia", "file", "files", "wa", "whatsapp"}
+_NEEDS_GATE = {"mail", "cal", "calendar", "rem", "reminder", "reminders", "alarm", "sveglia", "file", "files", "wa", "whatsapp", "sys", "system"}
 
 
 def run(argv: list[str], confirmed: bool = False) -> tuple[str, int]:

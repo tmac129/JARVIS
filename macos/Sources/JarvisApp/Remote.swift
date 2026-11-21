@@ -31,6 +31,9 @@ final class RemoteServer {
     func start() throws {
         guard listener == nil else { return }
         let l = try NWListener(using: .tcp, on: NWEndpoint.Port(rawValue: Self.port)!)
+        // Advertising on Bonjour makes macOS ask for the "Local Network" permission (Info.plist
+        // NSLocalNetworkUsageDescription). Without that permission the iPhone connects but never gets an answer.
+        l.service = NWListener.Service(name: "JARVIS", type: "_jarvis._tcp")
         l.newConnectionHandler = { [weak self] c in
             guard let self else { return }
             c.start(queue: self.q)
@@ -47,7 +50,7 @@ final class RemoteServer {
     // MARK: addresses
 
     static func localAddresses() -> [String] {
-        var out: [String] = []
+        var out: [String] = [], names: [String] = []
         var ifap: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifap) == 0 else { return out }
         var p = ifap
@@ -57,12 +60,16 @@ final class RemoteServer {
                 var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                 getnameinfo(ifa.ifa_addr, socklen_t(ifa.ifa_addr.pointee.sa_len), &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST)
                 let ip = String(cString: host)
-                if !ip.hasPrefix("127.") && !ip.hasPrefix("169.254") { out.append(ip) }
+                if !ip.hasPrefix("127.") && !ip.hasPrefix("169.254") { out.append(ip); names.append(name) }
             }
             p = ifa.ifa_next
         }
         freeifaddrs(ifap)
-        return out
+        // Wi-Fi / Ethernet first (what the iPhone on the same network can reach), then VPN (Tailscale 100.x)
+        return out.enumerated().sorted { a, b in
+            let ra = names[a.offset].hasPrefix("en") ? 0 : 1, rb = names[b.offset].hasPrefix("en") ? 0 : 1
+            return ra != rb ? ra < rb : a.offset < b.offset
+        }.map(\.element)
     }
 
     static var bonjourName: String {
@@ -132,9 +139,15 @@ final class RemoteServer {
 
     private func route(_ r: Request, _ c: NWConnection) {
         if r.method == "BAD" { return respond(c, 400, "text/plain", "Richiesta non valida.") }
+        // Home Screen icon: Safari asks for it without the token, and it contains nothing private
+        if r.method == "GET", r.path == "/apple-touch-icon.png" || r.path == "/apple-touch-icon-precomposed.png" {
+            return respondData(c, 200, "image/png", Self.iconPNG)
+        }
         let auth = r.query["token"] ?? r.headers["authorization"]?.replacingOccurrences(of: "Bearer ", with: "")
         guard Self.sameToken(auth, token) else { return respond(c, 401, "text/plain", "Token mancante o errato.") }
         switch (r.method, r.path) {
+        case ("GET", "/ping"):
+            respond(c, 200, "text/plain", "ok")
         case ("GET", "/"):
             respond(c, 200, "text/html; charset=utf-8", pageHTML().replacingOccurrences(of: "__TOKEN__", with: token))
         case ("POST", "/ask"), ("POST", "/ask.json"):
@@ -153,8 +166,25 @@ final class RemoteServer {
         }
     }
 
+    static let iconPNG: Data = {
+        guard let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"), let img = NSImage(contentsOf: url) else { return Data() }
+        let px = 180
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: px, pixelsHigh: px, bitsPerSample: 8, samplesPerPixel: 4,
+                                         hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return Data() }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        NSColor(red: 0.012, green: 0.031, blue: 0.067, alpha: 1).setFill()
+        NSRect(x: 0, y: 0, width: px, height: px).fill()
+        img.draw(in: NSRect(x: 0, y: 0, width: px, height: px))
+        NSGraphicsContext.restoreGraphicsState()
+        return rep.representation(using: .png, properties: [:]) ?? Data()
+    }()
+
     private func respond(_ c: NWConnection, _ code: Int, _ type: String, _ body: String) {
-        let b = Data(body.utf8)
+        respondData(c, code, type, Data(body.utf8))
+    }
+
+    private func respondData(_ c: NWConnection, _ code: Int, _ type: String, _ b: Data) {
         let status = [200: "OK", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found"][code] ?? "OK"
         let head = "HTTP/1.1 \(code) \(status)\r\nContent-Type: \(type)\r\nContent-Length: \(b.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n"
         c.send(content: Data(head.utf8) + b, completion: .contentProcessed { _ in c.cancel() })
