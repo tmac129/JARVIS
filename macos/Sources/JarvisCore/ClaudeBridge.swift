@@ -122,7 +122,7 @@ public final class ClaudeSession {
             "--system-prompt", Prompt.system,
             "--tools", ProcessInfo.processInfo.environment["JARVIS_TOOLS"] ?? (vision ? "Bash,Read" : "Bash"),
             "--allowedTools", "Bash(jarvis:*)",
-            "--disallowedTools", "Bash(jarvis confirm:*)", "Bash(jarvis cancel:*)",
+            "--disallowedTools", "Bash(jarvis confirm:*)", "Bash(jarvis cancel:*)", "Bash(jarvis reset:*)",
             "--permission-mode", "dontAsk",
             "--strict-mcp-config",
         ]

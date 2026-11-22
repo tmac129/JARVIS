@@ -447,7 +447,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             feedOffset = size
             return
         }
-        guard size > feedOffset else { if size < feedOffset { feedOffset = size }; return }
+        if size < feedOffset { feedOffset = 0 }   // log rotated or reset: read the new file from the start
+        guard size > feedOffset else { return }
         try? h.seek(toOffset: feedOffset)
         let data = h.readDataToEndOfFile()
         feedOffset = size

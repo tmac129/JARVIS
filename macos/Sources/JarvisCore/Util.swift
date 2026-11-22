@@ -81,12 +81,20 @@ public enum Refs {
 // MARK: - Action feed log (tailed by the HUD)
 
 public enum ActionLog {
+    static let maxBytes = 256 * 1024
+
     public static func add(_ module: String, _ text: String) {
         let line: [String: Any] = ["ts": ISO8601DateFormatter().string(from: Date()), "module": module, "text": text]
         guard let d = try? JSONSerialization.data(withJSONObject: line),
               var s = String(data: d, encoding: .utf8) else { return }
         s += "\n"
         let url = Paths.file("actions.log")
+        // Rotation: past maxBytes the file becomes actions.log.1 (one previous copy kept).
+        if let size = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? Int, size > maxBytes {
+            let old = Paths.file("actions.log.1")
+            try? FileManager.default.removeItem(at: old)
+            try? FileManager.default.moveItem(at: url, to: old)
+        }
         if let h = try? FileHandle(forWritingTo: url) {
             defer { try? h.close() }
             _ = try? h.seekToEnd(); try? h.write(contentsOf: Data(s.utf8))

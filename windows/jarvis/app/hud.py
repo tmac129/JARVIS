@@ -253,8 +253,8 @@ class App:
                     self.send(o)
             self.feed_offset = size
             return
-        if size < self.feed_offset:
-            self.feed_offset = size
+        if size < self.feed_offset:   # log ruotato o azzerato: rileggi dall'inizio
+            self.feed_offset = 0
         if size == self.feed_offset:
             return
         with open(path, "rb") as f:

@@ -18,7 +18,7 @@
     background-size: 24px 24px; transition: background-color .4s; }
   header { text-align: center; padding: 18px 0 8px; }
   .logo { color: var(--c); letter-spacing: .4em; font-weight: 300; font-size: 22px; text-shadow: 0 0 12px rgba(var(--c-rgb),.7); }
-  .sub { font-size: 9px; letter-spacing: .25em; color: rgba(var(--c-rgb),.5); margin-top: 4px; }
+  .sub { font-size: 9px; letter-spacing: .25em; color: rgba(var(--c-rgb),.75); margin-top: 4px; }
   .core { width: 120px; height: 120px; margin: 18px auto; border-radius: 50%; position: relative;
     background: radial-gradient(circle, #fff 0, var(--c) 18%, rgba(var(--c-rgb),.25) 45%, transparent 70%);
     animation: breathe 2.4s ease-in-out infinite; }
@@ -26,7 +26,7 @@
   .core::after { inset: -28px; border: 1px solid rgba(var(--c-rgb),.25); border-top-color: var(--c); animation-duration: 5s; animation-direction: reverse; }
   body.busy .core::before, body.busy .core::after { animation-duration: 1.5s; }
   #log { flex: 1; overflow-y: auto; font-size: 15px; line-height: 1.45; padding: 4px 2px; }
-  .me { color: rgba(var(--c-rgb),.6); margin: 10px 0 2px; font-size: 13px; }
+  .me { color: rgba(var(--c-rgb),.8); margin: 10px 0 2px; font-size: 13px; }
   .me::before { content: "TU // "; }
   .j { margin-bottom: 8px; }
   .j::before { content: "JARVIS // "; color: var(--c); font-size: 11px; letter-spacing: .15em; }
@@ -39,23 +39,30 @@
   form { display: flex; gap: 8px; border: 1px solid rgba(var(--c-rgb),.45); background: rgba(var(--c-rgb),.06); padding: 6px; border-radius: 6px; }
   input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 17px; padding: 8px; }
   form button { background: var(--c); color: var(--bg); border: none; font-weight: 600; padding: 0 16px; border-radius: 4px; font-size: 15px; }
-  .hint { text-align: center; font-size: 10px; color: rgba(var(--c-rgb),.45); margin-top: 8px; letter-spacing: .1em; }
+  .hint { text-align: center; font-size: 10px; color: rgba(var(--c-rgb),.72); margin-top: 8px; letter-spacing: .1em; }
   .up { color: #2BFF88; } .down { color: #FF4D4D; }
   .core { width: 90px; height: 90px; }
+  input::placeholder { color: rgba(var(--c-rgb),.65); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  form:focus-within { border-color: var(--c); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
   @keyframes breathe { 50% { transform: scale(1.06); } }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 <header><div class="logo">J.A.R.V.I.S.</div><div class="sub">CONNESSO AL PC // RETE LOCALE</div></header>
-<div class="core"></div>
-<div id="log"></div>
-<div class="chips">
+<div class="core" aria-hidden="true"></div>
+<div id="log" role="log" aria-live="polite" aria-label="Conversazione con J.A.R.V.I.S."></div>
+<div class="chips" role="group" aria-label="Comandi rapidi">
   <button class="chip">Briefing</button><button class="chip">Impegni di oggi</button><button class="chip">Mail non lette</button>
   <button class="chip">Promemoria da fare</button>
 </div>
 <div class="confirm"><button id="yes">CONFERMA</button><button id="no" class="no">ANNULLA</button></div>
-<form id="f"><input id="t" placeholder="Comando (usa il microfono della tastiera)" autocomplete="off"><button>INVIA</button></form>
+<form id="f"><label for="t" class="sr-only">Comando per J.A.R.V.I.S.</label><input id="t" placeholder="Comando (usa il microfono della tastiera)" autocomplete="off"><button>INVIA</button></form>
 <div class="hint">TOCCA IL MICROFONO DELLA TASTIERA PER DETTARE</div>
 <script>
 const TOKEN = "__TOKEN__";

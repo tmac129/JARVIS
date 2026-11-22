@@ -141,7 +141,7 @@ class ClaudeSession:
             "--system-prompt", prompt.system(),
             "--tools", os.environ.get("JARVIS_TOOLS") or ("Bash,Read" if self.vision else "Bash"),
             "--allowedTools", "Bash(jarvis:*)",
-            "--disallowedTools", "Bash(jarvis confirm:*)", "Bash(jarvis cancel:*)",
+            "--disallowedTools", "Bash(jarvis confirm:*)", "Bash(jarvis cancel:*)", "Bash(jarvis reset:*)",
             "--permission-mode", "dontAsk",
             "--strict-mcp-config",
         ]

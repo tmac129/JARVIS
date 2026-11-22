@@ -26,6 +26,7 @@ jarvis doc read <f1|percorso> [--pages 1-5]          (PDF, Word, RTF, testo, imm
 jarvis screen [--full]                               (cattura la finestra che l'utente sta guardando)
 jarvis now
 jarvis pending | confirm [p1] | cancel [p1]      (solo interfaccia utente)
+jarvis reset                                     (solo interfaccia utente, da terminale: elimina tutti i dati locali)
 jarvis ask "<testo>" | chat                      (test del bridge Claude)
 """
 
@@ -130,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     # Difesa in profondita': quando e' il modello a eseguire `jarvis` (JARVIS_AGENT) non puo' mai confermare
     # le proprie azioni critiche, nemmeno se un comando sfuggisse ai filtri --disallowedTools di Claude Code.
-    if os.environ.get("JARVIS_AGENT") and argv and argv[0] in ("confirm", "cancel"):
+    if os.environ.get("JARVIS_AGENT") and argv and argv[0] in ("confirm", "cancel", "reset"):
         print("ERRORE: le conferme arrivano solo dall'interfaccia utente.")
         return 1
     first = argv[0] if argv else ""
@@ -162,6 +163,9 @@ def main(argv: list[str] | None = None) -> int:
     if first == "hud":
         from .app.hud import main as hud_main
         return hud_main()
+    if first == "reset":
+        from .reset import interactive
+        return interactive()
     if first == "doctor":
         from .doctor import run_doctor
         return run_doctor()
