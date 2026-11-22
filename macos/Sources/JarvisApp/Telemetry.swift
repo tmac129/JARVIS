@@ -7,6 +7,17 @@ final class Telemetry {
     private var prevTicks: (UInt32, UInt32, UInt32, UInt32)?
     private var prevNet: (UInt64, UInt64, Date)?
 
+    /// "MACOS 15.1 // APPLE SILICON": shown in the HUD telemetry title instead of a fixed machine name.
+    static let osLabel: String = {
+        let v = ProcessInfo.processInfo.operatingSystemVersion
+        #if arch(arm64)
+        let cpu = "APPLE SILICON"
+        #else
+        let cpu = "INTEL"
+        #endif
+        return "macOS \(v.majorVersion).\(v.minorVersion) // \(cpu)"
+    }()
+
     func sample() -> [String: Any] {
         let (inRate, outRate) = network()
         let b = battery()
@@ -19,6 +30,7 @@ final class Telemetry {
             "netIn": inRate, "netOut": outRate,
             "thermal": thermal(),
             "uptime": ProcessInfo.processInfo.systemUptime,
+            "os": Self.osLabel,
         ]
     }
 

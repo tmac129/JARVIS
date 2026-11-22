@@ -10,12 +10,12 @@
   --c-rgb: 0, 229, 255;
   --bg: rgba(2, 7, 15, 0.80);
   --text: #CFF8FF;
-  --dim: rgba(0, 229, 255, 0.48);
+  --dim: rgba(0, 229, 255, 0.72);
   --mono: "SF Mono", ui-monospace, Menlo, monospace;
   --sans: "SF Pro Display", -apple-system, "Helvetica Neue", sans-serif;
 }
-body.thinking  { --c: var(--amber); --c-rgb: 255, 184, 0;  --dim: rgba(255, 184, 0, 0.5); }
-body.alert     { --c: var(--red);   --c-rgb: 255, 42, 42;  --dim: rgba(255, 42, 42, 0.55); }
+body.thinking  { --c: var(--amber); --c-rgb: 255, 184, 0;  --dim: rgba(255, 184, 0, 0.75); }
+body.alert     { --c: var(--red);   --c-rgb: 255, 42, 42;  --dim: rgba(255, 90, 90, 0.95); }
 body.listening { --c: var(--sky);   --c-rgb: 56, 189, 248; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -247,9 +247,9 @@ button.mini.armed { color: #fff; background: rgba(255, 42, 42, .55); border-colo
 .prompt { color: var(--c); font-size: 14px; text-shadow: 0 0 8px var(--c); animation: blink 2s infinite; }
 #cmd { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font: 14px var(--mono);
   letter-spacing: .04em; caret-color: var(--c); -webkit-user-select: text; user-select: text; }
-#cmd::placeholder { color: rgba(var(--c-rgb), 0.35); }
+#cmd::placeholder { color: rgba(var(--c-rgb), 0.62); }
 .mic.on { background: var(--c); color: #030811; box-shadow: 0 0 14px var(--c); }
-.hint { font-size: 8.5px; color: rgba(var(--c-rgb), .4); letter-spacing: .25em; text-align: center; }
+.hint { font-size: 9px; color: rgba(var(--c-rgb), .68); letter-spacing: .25em; text-align: center; }
 
 /* ---------------------------------------------------------------- alert */
 .alert { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, 90%);
@@ -261,7 +261,7 @@ button.mini.armed { color: #fff; background: rgba(255, 42, 42, .55); border-colo
 .alert-actions { display: flex; justify-content: center; gap: 14px; }
 .alert button { color: #fff; border-color: var(--red); background: rgba(255, 42, 42, .35); }
 .alert button.ghost { background: transparent; color: #FFB3B3; }
-.alert-hint { margin-top: 10px; font-size: 8.5px; color: rgba(255, 150, 150, .6); letter-spacing: .25em; }
+.alert-hint { margin-top: 10px; font-size: 8.5px; color: rgba(255, 150, 150, .85); letter-spacing: .25em; }
 
 /* ---------------------------------------------------------------- boot */
 .boot { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
@@ -312,3 +312,12 @@ button.mini.armed { color: #fff; background: rgba(255, 42, 42, .55); border-colo
 body.native { clip-path: none; padding-top: 10px; }
 body.native .top { padding-left: 74px; }
 body.native .hint::after { content: " // ROSSO = NASCONDI // ⌘Q = ESCI"; }
+
+/* ---------------------------------------------------------------- accessibility */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+button:focus-visible, .chip:focus-visible, [tabindex]:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(var(--c-rgb), .6); }
+.cmd:focus-within { outline: 1px solid var(--c); outline-offset: 1px; }
+/* "Riduci movimento" del sistema: niente lampeggi, rotazioni e scansioni continue */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}

@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,10 +11,10 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>J.A.R.V.I.S.</title>
 <style>
-  :root { --c: #00E5FF; --c-rgb: 0,229,255; --bg: #02070F; --text: #D6FAFF; --dim: rgba(0,229,255,.5);
+  :root { --c: #00E5FF; --c-rgb: 0,229,255; --bg: #02070F; --text: #D6FAFF; --dim: rgba(0,229,255,.75);
     --mono: "SF Mono", ui-monospace, Menlo, monospace; }
-  body.busy  { --c: #FFB800; --c-rgb: 255,184,0; --dim: rgba(255,184,0,.55); }
-  body.alert { --c: #FF2A2A; --c-rgb: 255,42,42; --dim: rgba(255,42,42,.6); }
+  body.busy  { --c: #FFB800; --c-rgb: 255,184,0; --dim: rgba(255,184,0,.78); }
+  body.alert { --c: #FF2A2A; --c-rgb: 255,42,42; --dim: rgba(255,90,90,.95); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--bg); color: var(--text); }
   body { font: 15px/1.45 -apple-system, "SF Pro Text", sans-serif; display: flex; flex-direction: column; height: 100dvh;
@@ -68,11 +68,16 @@
   textarea { flex: 1; resize: none; max-height: 120px; min-height: 44px; font: 17px/1.35 -apple-system, sans-serif; color: #fff; background: rgba(var(--c-rgb), .07);
     border: 1px solid rgba(var(--c-rgb), .4); border-radius: 22px; padding: 11px 16px; outline: none; }
   textarea:focus { border-color: var(--c); }
-  textarea::placeholder { color: rgba(var(--c-rgb), .4); }
+  textarea::placeholder { color: rgba(var(--c-rgb), .65); }
   .send { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--c); color: var(--bg); display: grid; place-items: center; box-shadow: 0 0 14px rgba(var(--c-rgb), .5); transition: background .5s; }
   .send svg { width: 20px; height: 20px; }
   .send:disabled { opacity: .35; box-shadow: none; }
 
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  button:focus-visible, textarea:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes breathe { 50% { opacity: .5; } }
   @keyframes blink { 50% { opacity: .3; } }
@@ -86,31 +91,32 @@
   </svg>
   <div class="title">
     <div class="logo">J.A.R.V.I.S.</div>
-    <div class="status" id="status"><i></i><span id="status-text">VERIFICA COLLEGAMENTO</span></div>
+    <div class="status" id="status" role="status"><i aria-hidden="true"></i><span id="status-text">VERIFICA COLLEGAMENTO</span></div>
   </div>
-  <button class="icon" id="voice" title="Lettura vocale delle risposte" aria-label="Voce">
+  <button class="icon" id="voice" title="Lettura vocale delle risposte" aria-label="Lettura vocale delle risposte" aria-pressed="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>
     </svg>
   </button>
-  <button class="icon" id="clear" title="Pulisci la chat" aria-label="Pulisci">
+  <button class="icon" id="clear" title="Pulisci la chat" aria-label="Pulisci la chat">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
     </svg>
   </button>
 </header>
 
-<div id="log"></div>
+<div id="log" role="log" aria-live="polite" aria-label="Conversazione con J.A.R.V.I.S."></div>
 
 <div class="bottom">
   <div class="confirm"><button id="yes">CONFERMA</button><button id="no" class="no">ANNULLA</button></div>
-  <div class="chips">
+  <div class="chips" role="group" aria-label="Comandi rapidi">
     <button class="chip" data-q="Briefing">Briefing</button>
     <button class="chip" data-q="Quali impegni ho oggi?">Impegni di oggi</button>
     <button class="chip" data-q="Che compiti ho da fare?">Compiti</button>
     <button class="chip" data-q="Ho mail non lette?">Mail non lette</button>
   </div>
   <form id="f">
+    <label for="t" class="sr-only">Comando per J.A.R.V.I.S.</label>
     <textarea id="t" rows="1" placeholder="Scrivi o detta un comando" autocomplete="off" enterkeyhint="send"></textarea>
     <button class="send" id="send" aria-label="Invia">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
@@ -147,7 +153,7 @@
 
   // ---------------- voice output (toggle, remembered)
   let voice = localStorage.getItem("jarvis.mobile.voice") !== "0";
-  const paintVoice = () => { $("voice").classList.toggle("off", !voice); $("voice").querySelector(".wave").style.display = voice ? "" : "none"; };
+  const paintVoice = () => { $("voice").classList.toggle("off", !voice); $("voice").setAttribute("aria-pressed", String(voice)); $("voice").querySelector(".wave").style.display = voice ? "" : "none"; };
   $("voice").onclick = () => { voice = !voice; localStorage.setItem("jarvis.mobile.voice", voice ? "1" : "0"); if (!voice && window.speechSynthesis) speechSynthesis.cancel(); paintVoice(); };
   paintVoice();
   function say(text) {

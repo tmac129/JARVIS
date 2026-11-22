@@ -6,6 +6,8 @@ Coprono la logica pura: router, date, riferimenti, conferme, limite d'output, mo
 e il ponte verso Claude (con un finto `claude`). Le parti che dipendono da Windows o da Google (volume, tray,
 Calendar, Gmail...) si provano solo su un PC Windows con gli account collegati.
 """
+import contextlib
+import io
 import os
 import re
 import stat
@@ -494,7 +496,7 @@ class BridgeTests(unittest.TestCase):
     def test_security_flags_are_not_widened(self):
         src = (Path(__file__).resolve().parents[1] / "jarvis" / "bridge.py").read_text(encoding="utf-8")
         self.assertIn('"--allowedTools", "Bash(jarvis:*)"', src)
-        self.assertIn('"--disallowedTools", "Bash(jarvis confirm:*)", "Bash(jarvis cancel:*)"', src)
+        self.assertIn('"--disallowedTools", "Bash(jarvis confirm:*)", "Bash(jarvis cancel:*)", "Bash(jarvis reset:*)"', src)
         self.assertIn('"--permission-mode", "dontAsk"', src)
         self.assertEqual(len(re.findall(r'"--allowedTools"', src)), 1)
 
@@ -556,6 +558,73 @@ class QuickFixTests(unittest.TestCase):
         src = (Path(__file__).resolve().parents[1] / "jarvis" / "app" / "hud.py").read_text(encoding="utf-8")
         self.assertNotIn('add_hotkey("alt+space"', src)
         self.assertIn('add_hotkey("alt+shift+space"', src)
+
+
+
+class DataResetTests(unittest.TestCase):
+    """Rotazione di actions.log e `jarvis reset` (cancellazione dei dati locali)."""
+
+    def setUp(self):
+        from jarvis.core import Paths
+        self.support = Paths.support
+        self.support.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self):
+        self.support.mkdir(parents=True, exist_ok=True)   # gli altri test scrivono ancora qui
+
+    def test_action_log_rotates(self):
+        from unittest import mock
+        from jarvis import core
+        log, old = self.support / "actions.log", self.support / "actions.log.1"
+        for f in (log, old):
+            if f.exists():
+                f.unlink()
+        with mock.patch.object(core, "ACTION_LOG_MAX", 200):
+            for i in range(10):
+                core.ActionLog.add("TEST", f"voce numero {i} con un po' di testo")
+        self.assertTrue(old.exists())
+        self.assertLessEqual(log.stat().st_size, 200 + 200)
+
+    def test_reset_refused_for_model(self):
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"JARVIS_AGENT": "1"}), contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(cli.main(["reset"]), 1)
+        self.assertIn("solo dall'interfaccia", out.getvalue())
+
+    def test_reset_hidden_from_model_prompt(self):
+        self.assertNotIn("jarvis reset", prompt.system())
+
+    def test_reset_needs_terminal(self):
+        from unittest import mock
+        (self.support / "keep.txt").write_text("x")
+        with mock.patch("sys.stdin") as stdin, contextlib.redirect_stdout(io.StringIO()):
+            stdin.isatty.return_value = False
+            self.assertEqual(cli.main(["reset"]), 1)
+        self.assertTrue((self.support / "keep.txt").exists())
+
+    def test_reset_cancelled_without_word(self):
+        from unittest import mock
+        (self.support / "keep.txt").write_text("x")
+        with mock.patch("sys.stdin") as stdin, mock.patch("builtins.input", return_value="si"), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            stdin.isatty.return_value = True
+            self.assertEqual(cli.main(["reset"]), 0)
+        self.assertIn("Annullato", out.getvalue())
+        self.assertTrue((self.support / "keep.txt").exists())
+
+    def test_reset_deletes_everything(self):
+        from unittest import mock
+        (self.support / "prefs.json").write_text("{}")
+        (self.support / "sub").mkdir(exist_ok=True)
+        (self.support / "sub" / "x.txt").write_text("x")
+        Store.save("alarms.json", [{"id": "a1"}])
+        with mock.patch("sys.stdin") as stdin, mock.patch("builtins.input", return_value="ELIMINA"), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            stdin.isatty.return_value = True
+            self.assertEqual(cli.main(["reset"]), 0)
+        self.assertIn("eliminati", out.getvalue())
+        self.assertIn("1 sveglie", out.getvalue())
+        self.assertFalse(self.support.exists() and any(self.support.iterdir()))
 
 
 if __name__ == "__main__":

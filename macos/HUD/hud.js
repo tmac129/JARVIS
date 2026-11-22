@@ -305,6 +305,7 @@
   }
 
   function telemetry(m) {
+    if (m.os) $("telem-title").textContent = "TELEMETRIA // " + String(m.os).toUpperCase();
     $("cpu-val").textContent = m.cpu.toFixed(0) + "%"; gauge("g-cpu", m.cpu, m.cpu > 80);
     const ramPct = m.ramUsed / m.ramTotal * 100;
     $("ram-pct").textContent = ramPct.toFixed(0) + "%";

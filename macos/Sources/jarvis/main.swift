@@ -7,7 +7,7 @@ let argv = Array(CommandLine.arguments.dropFirst())
 
 // Defense in depth: when the model runs `jarvis` (JARVIS_AGENT is set by ClaudeBridge) it can never confirm
 // its own critical actions, even if a command slipped past Claude Code's --disallowedTools patterns.
-if ProcessInfo.processInfo.environment["JARVIS_AGENT"] != nil, let c = argv.first, ["confirm", "cancel"].contains(c) {
+if ProcessInfo.processInfo.environment["JARVIS_AGENT"] != nil, let c = argv.first, ["confirm", "cancel", "reset"].contains(c) {
     print("ERRORE: le conferme arrivano solo dall'interfaccia utente.")
     exit(1)
 }
@@ -55,6 +55,14 @@ case "chat":
         converse(brain, line)
     }
     brain.shutdown()
+case "reset":
+    // Deletes all local data. Interactive only: needs a terminal and the word ELIMINA typed by the user.
+    guard isatty(STDIN_FILENO) == 1 else { print("ERRORE: jarvis reset va eseguito da un terminale."); exit(1) }
+    print(DataReset.summary)
+    print("Chiudi prima JARVIS dalla barra dei menu. Per procedere scrivi ELIMINA: ", terminator: "")
+    fflush(stdout)
+    guard readLine()?.trimmingCharacters(in: .whitespaces) == "ELIMINA" else { print("Annullato."); exit(0) }
+    print(DataReset.run())
 case "route":
     print(Router.route(argv.dropFirst().joined(separator: " ")))
 default:

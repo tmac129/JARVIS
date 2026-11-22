@@ -19,6 +19,7 @@ public enum CLI {
     jarvis screen [--full]                               (cattura la finestra che l'utente sta guardando)
     jarvis now
     jarvis pending | confirm [p1] | cancel [p1]      (solo interfaccia utente)
+    jarvis reset                                     (solo interfaccia utente, da terminale: elimina tutti i dati locali)
     jarvis ask "<testo>" | chat                      (test del bridge Claude)
     """
 

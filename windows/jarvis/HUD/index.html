@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="hud.css">
 </head>
 <body class="standby">
-<div class="grid-bg"></div>
-<div class="vignette"></div>
+<div class="grid-bg" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
 
 <header class="top">
   <div class="brand">
@@ -16,8 +16,8 @@
     <div class="sub">JUST A RATHER VERY INTELLIGENT SYSTEM // STARK INTERFACE MK-LXXXV</div>
   </div>
   <div class="status">
-    <span class="dot"></span>
-    <span id="status-text">SYSTEM ONLINE // STANDBY</span>
+    <span class="dot" aria-hidden="true"></span>
+    <span id="status-text" role="status">SYSTEM ONLINE // STANDBY</span>
   </div>
   <div class="clock">
     <div id="clock-time">--:--:--</div>
@@ -30,7 +30,7 @@
   <div class="metric">
     <div class="row"><span>CPU</span><span id="cpu-val">--%</span></div>
     <div class="bar"><i id="cpu-bar"></i></div>
-    <canvas class="spark" id="cpu-spark"></canvas>
+    <canvas class="spark" id="cpu-spark" aria-hidden="true"></canvas>
   </div>
   <div class="metric">
     <div class="row"><span>MEMORIA</span><span id="ram-val">--</span></div>
@@ -42,7 +42,7 @@
   </div>
   <div class="metric">
     <div class="row"><span>RETE</span><span id="net-val">-- / --</span></div>
-    <canvas class="spark" id="net-spark"></canvas>
+    <canvas class="spark" id="net-spark" aria-hidden="true"></canvas>
   </div>
   <div class="kv"><span>TERMICO</span><span id="thermal-val">--</span></div>
   <div class="kv"><span>UPTIME</span><span id="uptime-val">--</span></div>
@@ -56,13 +56,13 @@
 </aside>
 
 <main class="center">
-  <canvas id="core"></canvas>
+  <canvas id="core" role="img" aria-label="Sfera animata di J.A.R.V.I.S.: cambia colore e movimento in base allo stato (attesa, ascolto, elaborazione, risposta)"></canvas>
   <div class="module" id="module">
     <div class="module-name" id="module-name">STANDBY</div>
     <div class="module-sub" id="module-sub">IN ATTESA DI ISTRUZIONI</div>
   </div>
-  <div class="alert" id="alert" hidden>
-    <div class="alert-title">// PROTOCOLLO DI SICUREZZA: CONFERMA RICHIESTA</div>
+  <div class="alert" id="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-title" aria-describedby="alert-text" hidden>
+    <div class="alert-title" id="alert-title">// PROTOCOLLO DI SICUREZZA: CONFERMA RICHIESTA</div>
     <div class="alert-text" id="alert-text"></div>
     <div class="alert-actions">
       <button id="btn-confirm">CONFERMA</button>
@@ -75,7 +75,7 @@
 <div class="right-col">
   <aside class="panel right">
     <div class="panel-title">ACTION FEED</div>
-    <ul class="feed" id="feed"></ul>
+    <ul class="feed" id="feed" aria-label="Azioni eseguite" aria-live="polite"></ul>
   </aside>
 </div>
 
@@ -83,12 +83,13 @@
   <div class="transcript">
     <div class="line user" id="t-user"></div>
     <div class="line tool" id="t-tool"></div>
-    <div class="line reply" id="t-reply">Buonasera. Tutti i sistemi sono operativi.</div>
+    <div class="line reply" id="t-reply" role="status" aria-live="polite">Buonasera. Tutti i sistemi sono operativi.</div>
   </div>
   <form class="cmd" id="cmd-form" autocomplete="off">
-    <span class="prompt">&gt;&gt;</span>
+    <span class="prompt" aria-hidden="true">&gt;&gt;</span>
+    <label for="cmd" class="sr-only">Comando per J.A.R.V.I.S.</label>
     <input id="cmd" type="text" spellcheck="false" placeholder="Comando, signore?   (/sonnet, /opus, /fable per forzare il modello)">
-    <button type="button" class="mic" id="btn-mic" title="Push-to-talk">MIC</button>
+    <button type="button" class="mic" id="btn-mic" title="Push-to-talk" aria-label="Microfono: parla a J.A.R.V.I.S.">MIC</button>
   </form>
   <div class="hint">ALT+MAIUSC+SPAZIO PARLA // ESC NASCONDE</div>
 </footer>

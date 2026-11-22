@@ -7,13 +7,13 @@
 <link rel="stylesheet" href="hud.css">
 </head>
 <body class="standby">
-<div class="grid-bg"></div>
-<div class="hex-bg"></div>
-<div class="scanlines"></div>
-<div class="vignette"></div>
+<div class="grid-bg" aria-hidden="true"></div>
+<div class="hex-bg" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
 
 <!-- boot sequence (first load only, click to skip) -->
-<div class="boot" id="boot">
+<div class="boot" id="boot" aria-hidden="true">
   <div class="boot-inner">
     <svg class="boot-reactor" viewBox="0 0 120 120">
       <circle cx="60" cy="60" r="54" class="br-ring" />
@@ -40,8 +40,8 @@
     </div>
   </div>
   <div class="status">
-    <span class="dot"></span>
-    <span id="status-text">SYSTEM ONLINE // STANDBY</span>
+    <span class="dot" aria-hidden="true"></span>
+    <span id="status-text" role="status">SYSTEM ONLINE // STANDBY</span>
     <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
   </div>
   <div class="clock">
@@ -52,31 +52,31 @@
 
 <div class="left-col">
   <aside class="panel telem">
-    <div class="panel-title"><span class="idx">01</span>TELEMETRIA // MACBOOK AIR M4</div>
+    <div class="panel-title"><span class="idx">01</span><span id="telem-title">TELEMETRIA // SISTEMA</span></div>
     <div class="gauges">
       <div class="gauge" id="g-cpu">
-        <svg viewBox="0 0 64 64"><circle class="g-tick" cx="32" cy="32" r="30"/><circle class="g-trk" cx="32" cy="32" r="25"/><circle class="g-val" cx="32" cy="32" r="25"/></svg>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="g-tick" cx="32" cy="32" r="30"/><circle class="g-trk" cx="32" cy="32" r="25"/><circle class="g-val" cx="32" cy="32" r="25"/></svg>
         <div class="g-num" id="cpu-val">--%</div>
         <div class="g-lbl">CPU</div>
       </div>
       <div class="gauge" id="g-ram">
-        <svg viewBox="0 0 64 64"><circle class="g-tick" cx="32" cy="32" r="30"/><circle class="g-trk" cx="32" cy="32" r="25"/><circle class="g-val" cx="32" cy="32" r="25"/></svg>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="g-tick" cx="32" cy="32" r="30"/><circle class="g-trk" cx="32" cy="32" r="25"/><circle class="g-val" cx="32" cy="32" r="25"/></svg>
         <div class="g-num" id="ram-pct">--%</div>
         <div class="g-lbl" id="ram-val">MEM</div>
       </div>
       <div class="gauge" id="g-batt">
-        <svg viewBox="0 0 64 64"><circle class="g-tick" cx="32" cy="32" r="30"/><circle class="g-trk" cx="32" cy="32" r="25"/><circle class="g-val" cx="32" cy="32" r="25"/></svg>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="g-tick" cx="32" cy="32" r="30"/><circle class="g-trk" cx="32" cy="32" r="25"/><circle class="g-val" cx="32" cy="32" r="25"/></svg>
         <div class="g-num" id="batt-val">--%</div>
         <div class="g-lbl" id="batt-lbl">BATT</div>
       </div>
     </div>
     <div class="metric">
       <div class="row"><span>CARICO CPU // 60S</span><span id="cpu-peak">PICCO --%</span></div>
-      <canvas class="spark" id="cpu-spark"></canvas>
+      <canvas class="spark" id="cpu-spark" aria-hidden="true"></canvas>
     </div>
     <div class="metric">
       <div class="row"><span>RETE</span><span id="net-val">-- / --</span></div>
-      <canvas class="spark" id="net-spark"></canvas>
+      <canvas class="spark" id="net-spark" aria-hidden="true"></canvas>
     </div>
     <div class="kv2">
       <div><span>TERMICO</span><b id="thermal-val">--</b></div>
@@ -94,7 +94,7 @@
   <aside class="panel globe-panel">
     <div class="panel-title"><span class="idx">03</span>RETE GLOBALE // GEO</div>
     <div class="globe-wrap">
-      <canvas id="globe"></canvas>
+      <canvas id="globe" aria-hidden="true"></canvas>
       <div class="geo tl"><div>NODO <b>HOME // IT</b></div><div>42.50°N 12.50°E</div></div>
       <div class="geo tr"><div>ROT <b id="geo-rot">000.0°</b></div><div id="geo-links">LINK 0</div></div>
       <div class="geo bl"><div>UPLINK <b id="geo-uplink">ANTHROPIC // IDLE</b></div></div>
@@ -103,15 +103,15 @@
 </div>
 
 <main class="center">
-  <canvas id="core"></canvas>
+  <canvas id="core" role="img" aria-label="Sfera animata di J.A.R.V.I.S.: cambia colore e movimento in base allo stato (attesa, ascolto, elaborazione, risposta)"></canvas>
   <div class="hud-corner tl"><div>DIAG</div><b id="diag-val">NOMINALE</b></div>
   <div class="hud-corner tr"><div>SESSIONE</div><b id="sess-val">00:00:00</b></div>
   <div class="module" id="module">
     <div class="module-name" id="module-name">STANDBY</div>
     <div class="module-sub" id="module-sub">IN ATTESA DI ISTRUZIONI</div>
   </div>
-  <div class="alert" id="alert" hidden>
-    <div class="alert-title">// PROTOCOLLO DI SICUREZZA: CONFERMA RICHIESTA</div>
+  <div class="alert" id="alert" role="alertdialog" aria-modal="true" aria-labelledby="alert-title" aria-describedby="alert-text" hidden>
+    <div class="alert-title" id="alert-title">// PROTOCOLLO DI SICUREZZA: CONFERMA RICHIESTA</div>
     <div class="alert-text" id="alert-text"></div>
     <div class="alert-actions">
       <button id="btn-confirm">CONFERMA</button>
@@ -127,7 +127,7 @@
       <div class="panel-title"><span class="idx">04</span>ACTION FEED <span class="count" id="feed-count">0</span></div>
       <button class="mini" id="btn-clear-feed" title="Elimina tutte le voci del feed">CLEAR</button>
     </div>
-    <ul class="feed scroll" id="feed"></ul>
+    <ul class="feed scroll" id="feed" aria-label="Azioni eseguite" aria-live="polite"></ul>
   </aside>
 </div>
 
@@ -137,13 +137,14 @@
       <div class="panel-title"><span class="idx">05</span>CANALE DIRETTO // J.A.R.V.I.S.</div>
       <button class="mini" id="btn-clear-chat" title="Pulisce la cronologia della chat">CLEAR</button>
     </div>
-    <div class="chat-log scroll" id="chat"></div>
+    <div class="chat-log scroll" id="chat" role="log" aria-live="polite" aria-label="Conversazione con J.A.R.V.I.S."></div>
     <button class="jump" id="btn-jump" hidden>▼ ULTIMI MESSAGGI</button>
   </section>
   <form class="cmd" id="cmd-form" autocomplete="off">
-    <span class="prompt">&gt;&gt;</span>
+    <span class="prompt" aria-hidden="true">&gt;&gt;</span>
+    <label for="cmd" class="sr-only">Comando per J.A.R.V.I.S.</label>
     <input id="cmd" type="text" spellcheck="false" placeholder="Comando, signore?   (/sonnet, /opus, /fable per forzare il modello)">
-    <button type="button" class="mic" id="btn-mic" title="Push-to-talk">MIC</button>
+    <button type="button" class="mic" id="btn-mic" title="Push-to-talk" aria-label="Microfono: parla a J.A.R.V.I.S.">MIC</button>
   </form>
   <div class="hint">⌥SPACE RICHIAMA // ESC NASCONDE // ↑↓ CRONOLOGIA COMANDI</div>
 </footer>

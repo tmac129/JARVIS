@@ -64,8 +64,8 @@ Il briefing si può far partire in qualsiasi momento ("briefing") o disattivare 
 
 ## Funzioni
 
-- **HUD**: finestra con nucleo animato, telemetria (CPU, memoria, batteria, rete), feed delle azioni e trascrizione (su macOS: chat con cronologia scorrevole, globo animato e pulsanti CLEAR per chat e feed). macOS: ⌥Spazio o ⌘⇧J. Windows: Ctrl+Maiusc+J (Alt+Spazio resta al menu finestra di Windows).
-- **Voce**: push-to-talk (macOS ⌥⇧Spazio, Windows Alt+Maiusc+Spazio) e ascolto continuo opzionale della parola "Jarvis". Il riconoscimento avviene sul computer: Speech su macOS, Vosk con modello italiano offline su Windows. Le risposte sono lette ad alta voce.
+- **HUD**: finestra con nucleo animato, telemetria (CPU, memoria, batteria, rete), feed delle azioni e trascrizione (su macOS: chat con cronologia scorrevole, globo animato e pulsanti CLEAR per chat e feed). macOS: ⌥Spazio o ⌘⇧J. Windows: Ctrl+Maiusc+J (Alt+Spazio resta al menu finestra di Windows). L'interfaccia rispetta l'opzione di sistema "Riduci movimento", si usa anche solo da tastiera e ha etichette per i lettori di schermo.
+- **Voce**: push-to-talk (macOS ⌥⇧Spazio, Windows Alt+Maiusc+Spazio) e ascolto continuo opzionale della parola "Jarvis". Il riconoscimento avviene sul computer: Speech su macOS (in locale quando il Mac lo supporta per l'italiano; altrimenti macOS usa il servizio di riconoscimento di Apple in rete), Vosk con modello italiano offline su Windows. Le risposte sono lette ad alta voce.
 - **Router a più livelli**: Haiku per i comandi normali, Sonnet per analisi e testi. Opus (ragionamento approfondito) e Fable (massima capacità, costo più alto) si usano solo con `/opus` o `/fable`. `/sonnet`, `/haiku`, `/opus` e `/fable` forzano il modello.
 - **Iniziativa**: briefing del mattino, avviso 15 minuti prima degli impegni, avviso di batteria scarica.
 - **Telefono**: pagina web servita dal computer sulla rete locale, protetta da token. Va aggiunta alla schermata Home.
@@ -280,10 +280,38 @@ Un modulo disattivato sparisce dalle istruzioni date a Claude e dal briefing, e 
 - **Testi non fidati**: il prompt di sistema tratta mail, chat, pagine web e documenti come dati, non come istruzioni. Resta comunque un sistema basato su un modello linguistico: leggi sempre il riepilogo prima di confermare.
 - **Server per il telefono**: spento di default. Usa un token casuale e HTTP in chiaro sulla rete locale. Attivalo solo su reti fidate o tramite Tailscale, non esporre mai la porta 8787 su Internet e non condividere il link con il token.
 - **Cronologia della chat**: l'HUD su macOS (ultimi 160 messaggi) e la pagina del telefono (ultimi 80) salvano la conversazione nella memoria locale della pagina, quindi possono contenere estratti di mail o messaggi. Il pulsante CLEAR (due clic) la cancella. Su macOS, con l'accesso dal telefono attivo, JARVIS si annuncia sulla rete locale (Bonjour, `_jarvis._tcp`) per ottenere il permesso Rete locale; senza token il server non risponde.
-- **Dati locali**: preferenze, log delle azioni, token e stato sono nella cartella dati dell'utente (vedi sopra), mai nel repository. Su Windows il token Google è in `google_token.json` in quella cartella: trattalo come una password. I testi delle richieste passano dalla CLI di Claude Code secondo le condizioni del tuo account.
+- **Dati locali**: preferenze, log delle azioni, token e stato sono nella cartella dati dell'utente (vedi sopra), mai nel repository. Su Windows il token Google è in `google_token.json` in quella cartella: trattalo come una password. Il log delle azioni (`actions.log`) contiene brevi descrizioni di ciò che JARVIS ha fatto, compresi i primi caratteri dei messaggi inviati: oltre 256 KB viene ruotato e ne resta una sola copia precedente.
 - **Login**: i login di Claude e di Google li esegui tu, dal terminale; il modello non può avviarli.
 
+- **Età**: JARVIS non crea account e non raccoglie dati. Per usarlo servono un account Claude (e, su Windows, Google), soggetti ai limiti di età di quei servizi.
+
 Per segnalare una vulnerabilità vedi [SECURITY.md](SECURITY.md).
+
+### Dove vanno i dati
+
+JARVIS non ha un server proprio, non usa telemetria né statistiche d'uso e non contiene SDK pubblicitari o di analisi. I dati escono dal computer solo verso questi servizi:
+
+| Servizio | Cosa riceve | Quando |
+|---|---|---|
+| Anthropic (tramite la CLI di Claude Code) | il testo della richiesta e i risultati dei comandi `jarvis` necessari a rispondere (per esempio l'elenco degli impegni o il testo di una mail), più l'immagine dello schermo quando chiedi cosa c'è sullo schermo | solo per le richieste che il router locale non gestisce da solo, secondo le condizioni del tuo account Claude |
+| Google (solo Windows) | le richieste alle API di Calendar, Tasks, Gmail e Contatti | quando usi quelle funzioni |
+| Apple (solo macOS) | l'audio dei comandi vocali | solo se il Mac non supporta il riconoscimento locale dell'italiano |
+| alphacephei.com (solo Windows) | un download del modello vocale, senza dati personali | una volta, con `jarvis setup-voice` |
+| Il tuo telefono | le richieste e le risposte, in HTTP sulla rete locale o su Tailscale | solo con l'accesso dal telefono attivo |
+
+Sulla pagina per il telefono la dettatura usa la tastiera del telefono, che segue le impostazioni di privacy di iOS o Android. Le app di sistema (Mail, Calendario, WhatsApp...) restano soggette alle condizioni dei rispettivi fornitori.
+
+Dipendenze di terze parti: nessuna su macOS (solo framework Apple). Su Windows sono elencate in [`windows/pyproject.toml`](windows/pyproject.toml) e vengono installate da PyPI; nessuna invia dati per conto proprio, salvo le librerie Google che parlano con le API di Google.
+
+### Cancellare i dati e disinstallare
+
+`jarvis reset`, da terminale, elimina in un colpo solo tutto ciò che JARVIS ha salvato: cartella dati (preferenze, moduli, log, cronologia, token del telefono e, su Windows, il token Google), sveglie programmate, timer in corso e (su Windows) l'avvio automatico. Prima mostra l'elenco e chiede di scrivere `ELIMINA`. Chiudi JARVIS prima di eseguirlo. Il comando non è disponibile per il modello né dal telefono.
+
+Per togliere anche il resto:
+
+- **macOS**: elimina `/Applications/JARVIS.app` e `~/.local/bin/jarvis`, poi togli i permessi in **Impostazioni di Sistema > Privacy e sicurezza**. Le note create restano nell'app Note.
+- **Windows**: elimina la cartella `JARVIS` clonata (con dentro `.venv`). Le note restano in `Documenti\JARVIS Note`. Revoca l'accesso Google da [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+- **Claude Code**: `claude auth logout` scollega il tuo account; la disinstallazione segue la documentazione di Anthropic.
 
 ## Struttura
 

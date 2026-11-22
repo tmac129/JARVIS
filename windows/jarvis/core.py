@@ -157,6 +157,9 @@ class Refs:
         return (Store.load("refs.json", {}) or {}).get(k)
 
 
+ACTION_LOG_MAX = 256 * 1024   # byte
+
+
 class ActionLog:
     """Feed delle azioni (letto dal HUD): una riga JSON per evento."""
 
@@ -164,8 +167,12 @@ class ActionLog:
     def add(module: str, text: str) -> None:
         line = json.dumps({"ts": datetime.now().astimezone().isoformat(timespec="seconds"),
                            "module": module, "text": text}, ensure_ascii=False)
+        path = Paths.file("actions.log")
         try:
-            with open(Paths.file("actions.log"), "a", encoding="utf-8") as f:
+            # rotazione: oltre ACTION_LOG_MAX il file diventa actions.log.1 (una sola copia precedente)
+            if path.exists() and path.stat().st_size > ACTION_LOG_MAX:
+                os.replace(path, path.with_name("actions.log.1"))
+            with open(path, "a", encoding="utf-8") as f:
                 f.write(line + "\n")
         except OSError:
             pass
