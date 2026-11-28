@@ -37,8 +37,9 @@
     $("status-text").textContent = STATUS[st] || st.toUpperCase();
     if (module) setModule(module);
     else if (st === "standby") setModule(null);
-    if (st === "thinking") Chat.pending(true);
+    if (st === "thinking") { Chat.pending(true); Progress.start(); }
     else if (st === "standby" && prev !== "standby") Chat.pending(false);
+    if (st === "alert") Progress.done();
   }
   function setModule(m) {
     $("module-name").textContent = m ? m : "STANDBY";
@@ -474,7 +475,7 @@
       clear() {
         finishTyping(); items = []; openUser = null; save();
         log.innerHTML = ""; if (pendingEl) log.appendChild(pendingEl);
-        this.reply("Cronologia ripulita, signore.", { save: false });
+        $("btn-jump").hidden = true;
       },
       nearBottom, toBottom,
     };
@@ -496,12 +497,14 @@
 
   // ---------------------------------------------------------------- input
   const history = []; let hIdx = -1;
+  const sendState = () => { $("btn-send").disabled = !$("cmd").value.trim(); };
+  $("cmd").addEventListener("input", sendState);
   $("cmd-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const v = $("cmd").value.trim();
     if (!v) return;
     history.unshift(v); hIdx = -1;
-    $("cmd").value = "";
+    $("cmd").value = ""; sendState();
     Chat.user(v, true);
     post({ type: "command", text: v });
   });
@@ -513,9 +516,9 @@
     } else if (e.key === "Enter" && alertOn && document.activeElement !== $("cmd")) {
       post({ type: "confirm" });
     } else if (e.key === "ArrowUp" && document.activeElement === $("cmd") && history.length) {
-      hIdx = Math.min(hIdx + 1, history.length - 1); $("cmd").value = history[hIdx]; e.preventDefault();
+      hIdx = Math.min(hIdx + 1, history.length - 1); $("cmd").value = history[hIdx]; sendState(); e.preventDefault();
     } else if (e.key === "ArrowDown" && document.activeElement === $("cmd")) {
-      hIdx = Math.max(hIdx - 1, -1); $("cmd").value = hIdx >= 0 ? history[hIdx] : ""; e.preventDefault();
+      hIdx = Math.max(hIdx - 1, -1); $("cmd").value = hIdx >= 0 ? history[hIdx] : ""; sendState(); e.preventDefault();
     } else if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey &&
                !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !window.getSelection().toString()) {
       $("cmd").focus();              // typing anywhere goes to the command line
@@ -535,6 +538,152 @@
   }
   setInterval(clock, 1000);
 
+  // ---------------------------------------------------------------- model / effort picker (panel 02)
+  const Pick = (() => {
+    // shortcut: versions the CLI aliases resolve to today; update when a new family ships
+    const MODELS = [
+      ["auto", "AUTOMATICO", "Haiku, sale a Sonnet se serve"],
+      ["haiku", "HAIKU 5.5", "Veloce, costo minimo"],
+      ["sonnet", "SONNET 5.5", "Analisi, testi, codice"],
+      ["opus", "OPUS 5.5", "Ragionamento profondo"],
+      ["fable", "FABLE 5.2", "Massima capacità", "COSTO ALTO"],
+    ];
+    const EFFORTS = [["auto", "AUTOMATICO", "Per modello"], ["low", "BASSO"], ["medium", "MEDIO"], ["high", "ALTO"],
+      ["xhigh", "EXTRA"], ["max", "MAX", "", "CONSUMO 3.5×"]];
+    const name = (list, k) => (list.find((x) => x[0] === k) || [k, String(k).toUpperCase()])[1];
+    const cur = { pref: "auto", tier: "haiku", effort: "auto", eff: "low" };
+    const pop = $("pick-pop"), btn = $("core-pick"), sub = $("pp-sub");
+    const check = '<svg class="pp-check" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5l2.6 2.6L10 3.5"/></svg>';
+
+    function rows(host, list, sel, onPick) {
+      host.innerHTML = "";
+      list.forEach(([k, label, desc, tag]) => {
+        const r = document.createElement("button");
+        r.type = "button"; r.className = "pp-row"; r.setAttribute("role", "menuitemradio");
+        r.setAttribute("aria-checked", k === sel);
+        r.innerHTML = `<span class="pp-name"></span>${tag ? '<span class="pp-tag warn"></span>' : ""}${check}`;
+        r.querySelector(".pp-name").textContent = label;
+        if (desc) { const s = document.createElement("small"); s.textContent = desc; r.querySelector(".pp-name").appendChild(s); }
+        if (tag) r.querySelector(".pp-tag").textContent = tag;
+        r.addEventListener("click", () => onPick(k));
+        host.appendChild(r);
+      });
+    }
+    function paint() {
+      $("cp-auto").hidden = cur.pref !== "auto";
+      $("cp-name").textContent = name(MODELS, cur.pref === "auto" ? cur.tier : cur.pref);
+      $("cp-effort").textContent = name(EFFORTS, cur.effort === "auto" ? cur.eff : cur.effort);
+      $("pp-effort-val").textContent = name(EFFORTS, cur.effort);
+      if (!pop.hidden) build();
+    }
+    function build() {
+      rows($("pp-models"), MODELS, cur.pref, (k) => { post({ type: "setModel", value: k }); close(); });
+      rows($("pp-efforts"), EFFORTS, cur.effort, (k) => { post({ type: "setEffort", value: k }); close(); });
+    }
+    function place() {
+      const r = btn.getBoundingClientRect();
+      pop.style.left = r.left + "px";
+      pop.style.top = Math.min(r.bottom + 6, window.innerHeight - pop.offsetHeight - 10) + "px";
+      if (!sub.hidden) {
+        const p = pop.getBoundingClientRect();
+        sub.style.left = p.right + 6 + "px";
+        sub.style.top = Math.max(10, p.bottom - sub.offsetHeight) + "px";
+      }
+    }
+    function open() { build(); pop.hidden = false; sub.hidden = true; place(); btn.setAttribute("aria-expanded", "true"); pop.querySelector(".pp-row").focus(); }
+    function close() { pop.hidden = true; sub.hidden = true; $("pp-effort-row").classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
+    btn.addEventListener("click", (e) => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    $("pp-effort-row").addEventListener("click", (e) => {
+      e.stopPropagation(); sub.hidden = !sub.hidden; $("pp-effort-row").classList.toggle("open", !sub.hidden);
+      if (!sub.hidden) { place(); sub.querySelector(".pp-row").focus(); }
+    });
+    pop.addEventListener("click", (e) => e.stopPropagation());
+    sub.addEventListener("click", (e) => e.stopPropagation());
+    document.addEventListener("click", () => { if (!pop.hidden) close(); });
+    window.addEventListener("resize", () => { if (!pop.hidden) place(); });
+    document.addEventListener("keydown", (e) => {
+      if (pop.hidden) return;
+      if (e.key === "Escape") { e.stopImmediatePropagation(); e.preventDefault(); close(); btn.focus(); }
+      else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        const all = [...(sub.hidden ? pop : sub).querySelectorAll(".pp-row")];
+        const i = all.indexOf(document.activeElement);
+        all[(i + (e.key === "ArrowDown" ? 1 : all.length - 1)) % all.length].focus();
+        e.preventDefault(); e.stopImmediatePropagation();
+      }
+    }, true);
+    return {
+      // native: { tier: tier of this turn, pref: auto|tier, effort: auto|level, eff: effective level }
+      model(m) {
+        if (m.pref) cur.pref = m.pref;
+        if (m.tier) cur.tier = m.tier;
+        if (m.effort) cur.effort = m.effort;
+        if (m.eff) cur.eff = m.eff;
+        paint();
+      },
+      set(k, v) { cur[k] = v; paint(); },
+      paint,
+    };
+  })();
+  Pick.paint();
+
+  // ---------------------------------------------------------------- request progress (header line)
+  // Driven by real events: the request starts (thinking), reaches the model, runs each tool, gets its reply.
+  // Between events it advances on elapsed time against the average duration of past replies, and it never
+  // passes 92% until the reply has really arrived: only then does it run to 100%.
+  const Progress = (() => {
+    const bar = $("progress"), fill = $("progress-fill"), pct = $("progress-pct"), top = document.querySelector(".top");
+    const CAP = 92, KEY = "jarvis.avgReply";
+    let avg = parseFloat(localStorage.getItem(KEY)) || 7;   // seconds
+    let running = false, finishing = false, t0 = 0, floor = 0, shown = 0, raf = 0, hideT = 0;
+    function render(v) {
+      shown = v;
+      fill.style.transform = `scaleX(${(v / 100).toFixed(4)})`;
+      const n = Math.floor(v);
+      pct.textContent = n + "%"; bar.setAttribute("aria-valuenow", n);
+    }
+    function loop(now) {
+      if (!running && !finishing) return;
+      let target;
+      if (finishing) target = 100;
+      else {
+        const el = (now - t0) / 1000;
+        target = Math.max(floor, CAP * (1 - Math.exp(-el / avg)));
+      }
+      const next = shown + (target - shown) * (finishing ? 0.16 : 0.08);
+      render(target - next < 0.05 ? target : next);
+      if (finishing && shown >= 100) {
+        finishing = false;
+        hideT = setTimeout(() => {
+          bar.classList.remove("show"); top.classList.remove("progressing");
+          setTimeout(() => { if (!running) render(0); }, 650);
+        }, 2200);
+        return;
+      }
+      raf = requestAnimationFrame(loop);
+    }
+    return {
+      start() {
+        if (running) return;
+        clearTimeout(hideT); cancelAnimationFrame(raf);
+        running = true; finishing = false; t0 = performance.now(); floor = 3; render(0);
+        bar.classList.add("show"); top.classList.add("progressing");
+        raf = requestAnimationFrame(loop);
+      },
+      // a real milestone: close part of the gap to the cap
+      step(f) { if (running) floor = Math.max(floor, shown) + (CAP - Math.max(floor, shown)) * f; },
+      done() {
+        if (!running) return;
+        running = false; finishing = true;
+        cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+      },
+      learn(sec) {
+        if (!(sec > 0)) return;
+        avg = Math.min(60, Math.max(1.5, avg * 0.7 + sec * 0.3));
+        try { localStorage.setItem(KEY, avg.toFixed(2)); } catch (e) {}
+      },
+    };
+  })();
+
   // ---------------------------------------------------------------- native -> HUD
   window.HUD = {
     recv(m) {
@@ -542,20 +691,21 @@
         case "state": setState(m.state, m.module); break;
         case "module": setModule(m.module); break;
         case "telemetry": telemetry(m); break;
-        case "model": $("model-val").textContent = "CORE: " + m.label; break;
+        case "model": Pick.model(m); if (m.turn) Progress.step(0.25); break;
         case "feed": feed(m, m.fresh !== false); break;
         case "feedCleared": feedEmpty(); break;
         case "user": Chat.user(m.text); break;
-        case "tool": Chat.tool(m.text); break;
-        case "reply": Chat.reply(m.text); break;
+        case "tool": Chat.tool(m.text); Progress.step(0.35); break;
+        case "reply": Chat.reply(m.text); Progress.done(); break;
         case "stats":
           $("turns-val").textContent = m.turns; $("tok-val").textContent = m.context.toLocaleString("it-IT");
           $("cost-val").textContent = "$" + m.cost.toFixed(4); $("lat-val").textContent = m.latency;
+          Progress.learn(parseFloat(m.latency));
           break;
-        case "confirm": showAlert(m.text); break;
+        case "confirm": showAlert(m.text); Progress.done(); break;
         case "confirmClear": hideAlert(); break;
         case "level": S.levelTarget = Math.max(0, Math.min(1, m.value)); break;
-        case "mic": $("btn-mic").classList.toggle("on", !!m.on); break;
+        case "mic": $("btn-mic").classList.toggle("on", !!m.on); $("btn-mic").setAttribute("aria-pressed", !!m.on); break;
         case "visible": S.visible = !!m.value; if (S.visible) setTimeout(() => $("cmd").focus(), 30); break;
         case "focus": $("cmd").focus(); break;
         case "native": S.native = true; document.body.classList.add("native"); break;
@@ -584,6 +734,8 @@
       } else if (m.type === "confirm" || m.type === "cancel") {
         hideAlert(); setState("standby");
         HUD.recv({ type: "reply", text: m.type === "confirm" ? "Inviata." : "Annullato." });
+      } else if (m.type === "setModel") { Pick.set("pref", m.value); if (m.value !== "auto") Pick.set("tier", m.value);
+      } else if (m.type === "setEffort") { Pick.set("effort", m.value);
       }
     },
   };

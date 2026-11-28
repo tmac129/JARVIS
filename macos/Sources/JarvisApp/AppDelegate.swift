@@ -171,10 +171,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         brain.effort = prefs.string(forKey: "effort")
     }
 
-    func modelLabel(_ t: Tier? = nil) -> String {
+    /// What panel 02 shows: the chosen model/effort ("auto" or a value) and the ones this turn actually uses.
+    func modelInfo(_ t: Tier? = nil, turn: Bool = false) -> [String: Any] {
         let tier = t ?? brain.defaultTier
-        let mode = brain.preferredTier == nil ? "AUTO" : "FISSO"
-        return "\(tier.label) // \(mode) // EFFORT \((brain.effort ?? tier.effort).uppercased())"
+        return ["type": "model", "tier": tier.rawValue, "pref": brain.preferredTier?.rawValue ?? "auto",
+                "effort": brain.effort ?? "auto", "eff": brain.effort ?? tier.effort, "turn": turn]
+    }
+
+    /// Only the arc-reactor body of the app icon, as a template image: macOS tints it like every other menu bar icon.
+    static func menuBarIcon() -> NSImage {
+        let img = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { r in
+            let c = NSPoint(x: r.midX, y: r.midY)
+            NSColor.black.set()
+            func ring(_ radius: CGFloat, _ width: CGFloat, _ count: Int, _ fill: CGFloat, _ start: CGFloat) {
+                let step = 360 / CGFloat(count)
+                for i in 0..<count {
+                    let a = start + CGFloat(i) * step
+                    let p = NSBezierPath()
+                    p.appendArc(withCenter: c, radius: radius, startAngle: a, endAngle: a + step * fill)
+                    p.lineWidth = width
+                    p.stroke()
+                }
+            }
+            ring(7.6, 1.5, 4, 0.78, 50)    // outer segmented ring
+            ring(4.6, 1.7, 8, 0.62, 12)    // reactor segments
+            NSBezierPath(ovalIn: NSRect(x: c.x - 1.9, y: c.y - 1.9, width: 3.8, height: 3.8)).fill()   // core
+            return true
+        }
+        img.isTemplate = true
+        img.accessibilityDescription = "J.A.R.V.I.S."
+        return img
     }
 
     // MARK: menu bar item
@@ -182,11 +208,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func buildStatusItem() {
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let b = status.button {
-            // the app icon itself, sized for the menu bar
-            let icon = (NSImage(named: "AppIcon") ?? NSApp.applicationIconImage).copy() as! NSImage
-            icon.size = NSSize(width: 20, height: 20)
-            icon.isTemplate = false
-            b.image = icon
+            b.image = Self.menuBarIcon()
             b.imagePosition = .imageOnly
             b.toolTip = "J.A.R.V.I.S."
         }
@@ -352,22 +374,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @objc func openDataFolder() { NSWorkspace.shared.open(Paths.support) }
     @objc func toggleOnTop() { alwaysOnTop.toggle() }
 
-    @objc func setModel(_ sender: NSMenuItem) {
-        let v = sender.representedObject as? String ?? "auto"
+    @objc func setModel(_ sender: NSMenuItem) { applyModel(sender.representedObject as? String ?? "auto") }
+    @objc func setEffort(_ sender: NSMenuItem) { applyEffort(sender.representedObject as? String ?? "auto") }
+
+    /// Shared by the menu bar and the HUD picker; the HUD value is untrusted, so check it.
+    func applyModel(_ v: String) {
+        guard v == "auto" || Tier(rawValue: v) != nil else { return }
         prefs.set(v == "auto" ? nil : v, forKey: "tier")
         brain.preferredTier = Tier(rawValue: v)
         settingsChanged("Modello: \(brain.preferredTier.map { $0.rawValue.capitalized } ?? "automatico").")
     }
 
-    @objc func setEffort(_ sender: NSMenuItem) {
-        let v = sender.representedObject as? String ?? "auto"
+    func applyEffort(_ v: String) {
+        guard v == "auto" || JarvisBrain.efforts.contains(v) else { return }
         prefs.set(v == "auto" ? nil : v, forKey: "effort")
         brain.effort = v == "auto" ? nil : v
         settingsChanged("Effort: \(brain.effort ?? "automatico").")
     }
 
     func settingsChanged(_ msg: String) {
-        send(["type": "model", "label": modelLabel()])
+        send(modelInfo())
         send(["type": "reply", "text": msg + " Nuova conversazione avviata."])
         send(["type": "feed", "module": "SYS", "text": msg])
     }
@@ -474,7 +500,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         switch type {
         case "ready":
             hudReady = true
-            send(["type": "model", "label": modelLabel()])
+            send(modelInfo())
             send(["type": "native"])
             pollFeed(initial: true)
             tick()
@@ -485,6 +511,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         case "cancel": resolvePending(confirm: false)
         case "hide": voice.stopSpeaking(); if voice.capturing { voice.cancelListening() } else { hide() }
         case "mic": toggleMic()
+        case "setModel": if let v = m["value"] as? String { applyModel(v) }
+        case "setEffort": if let v = m["value"] as? String { applyEffort(v) }
         case "stopSpeech": voice.stopSpeaking()
         case "clearFeed":
             // hide everything logged so far, also after a restart; actions.log stays on disk
@@ -534,7 +562,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func onEvent(_ ev: BridgeEvent, started: Date) {
         switch ev {
         case .thinking(let tier):
-            send(["type": "model", "label": modelLabel(tier)])
+            send(modelInfo(tier, turn: true))
         case .tool(let cmd):
             send(["type": "state", "state": "thinking", "module": Self.module(for: cmd)])
             send(["type": "tool", "text": cmd])

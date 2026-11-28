@@ -24,6 +24,8 @@ enum SysTool {
             if r.code != 0 { throw ToolError("app \"\(arg)\" non trovata") }
             ActionLog.add("SYSTEM", "Aperta \(arg)")
             return "Aperta \(arg)."
+        case "url", "link", "web":
+            return try openURL(Array(a.dropFirst()))
         case "quit", "chiudi":
             guard !arg.isEmpty else { throw ToolError("uso: sys quit <app>") }
             guard let app = NSWorkspace.shared.runningApplications.first(where: {
@@ -90,6 +92,54 @@ enum SysTool {
         default:
             throw ToolError("uso: sys open|quit|apps|volume|brightness|wifi|dark|lock|sleep|screenshot|battery")
         }
+    }
+
+    /// Safari profiles as named in File > Nuova finestra ("Nuova finestra di School", ...).
+    static let profili = ["scuola": "School", "school": "School", "personale": "Personal", "personal": "Personal",
+                          "vuota": "vuota", "vuoto": "vuota"]
+
+    /// `sys url URL [--profilo scuola|personale|vuota]`: without a profile opens the link in Safari as usual;
+    /// with one opens a new window of that profile (menu click via System Events, needs Accessibility) and loads it there.
+    static func openURL(_ a: [String]) throws -> String {
+        let args = Args(a)
+        guard let s = args.pos.first, let url = URL(string: s), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+            throw ToolError("uso: sys url <https://...> [--profilo scuola|personale|vuota]")
+        }
+        guard let p = args.o("profilo", "profile") else {
+            let r = try runProcess("/usr/bin/open", ["-a", "Safari", url.absoluteString])
+            if r.code != 0 { throw ToolError("Safari non ha aperto il link: \(r.err)") }
+            ActionLog.add("SYSTEM", "Aperto in Safari: \(url.host ?? s)")
+            return "Aperto in Safari: \(url.absoluteString)"
+        }
+        let profilo = profili[p.lowercased()] ?? p
+        let script = """
+        on run argv
+            set theURL to item 1 of argv
+            set prof to item 2 of argv
+            tell application "Safari" to activate
+            delay 0.5
+            set fatto to false
+            tell application "System Events" to tell process "Safari"
+                repeat with mbi in menu bar items of menu bar 1
+                    try
+                        set sub to menu 1 of (first menu item of menu 1 of mbi whose name is "Nuova finestra" or name is "New Window")
+                        click (first menu item of sub whose name ends with prof)
+                        set fatto to true
+                        exit repeat
+                    end try
+                end repeat
+            end tell
+            if not fatto then error "profilo " & prof & " non trovato nel menu Nuova finestra di Safari"
+            delay 1
+            tell application "Safari" to set URL of front document to theURL
+        end run
+        """
+        do { _ = try appleScript(script, [url.absoluteString, profilo]) }
+        catch let e as ToolError where e.description.contains("-1719") || e.description.contains("assistenza") {
+            throw ToolError("serve il permesso Accessibilità per JARVIS (Impostazioni > Privacy e sicurezza > Accessibilità)")
+        }
+        ActionLog.add("SYSTEM", "Aperto in Safari (\(profilo)): \(url.host ?? s)")
+        return "Aperto in una nuova finestra di Safari, profilo \(profilo): \(url.absoluteString)"
     }
 
     static func volume(_ v: String) throws -> String {

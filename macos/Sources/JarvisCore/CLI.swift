@@ -13,6 +13,7 @@ public enum CLI {
     jarvis file find <nome> [--ext pdf] [--in DIR] [--days N] [--dirs] | ls DIR [--ext pdf] | move|copy <SRC...> --to DIR | rename <SRC> <NOME> | mkdir DIR | open|reveal <SRC> | trash <SRC...>
     jarvis wa unread | chats [N] | read <nome|w1> [--n 15] | send --to <nome|numero|w1> --text T   (WhatsApp)
     jarvis sys open|quit <app> | apps | volume <0-100|su|giu|muto|attiva> | brightness <0-100|su|giu> | wifi on|off | dark on|off | lock | sleep | screenshot | battery
+    jarvis sys url <https://...> [--profilo scuola|personale|vuota]   (apre un link in Safari; col profilo, in una nuova finestra di quel profilo)
     jarvis music play [brano|artista] | pause | next | prev | now   (Spotify)
     jarvis note add --title T [--body B] [--folder F] | list | search <testo> | read <nt1> | append <nt1> --text T
     jarvis doc read <f1|percorso> [--pages 1-5]          (PDF, Word, RTF, testo, immagini)

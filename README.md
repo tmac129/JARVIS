@@ -66,7 +66,7 @@ Il briefing si può far partire in qualsiasi momento ("briefing") o disattivare 
 
 - **HUD**: finestra con nucleo animato, telemetria (CPU, memoria, batteria, rete), feed delle azioni e trascrizione (su macOS: chat con cronologia scorrevole, globo animato e pulsanti CLEAR per chat e feed). macOS: ⌥Spazio o ⌘⇧J. Windows: Ctrl+Maiusc+J (Alt+Spazio resta al menu finestra di Windows). L'interfaccia rispetta l'opzione di sistema "Riduci movimento", si usa anche solo da tastiera e ha etichette per i lettori di schermo.
 - **Voce**: push-to-talk (macOS ⌥⇧Spazio, Windows Alt+Maiusc+Spazio) e ascolto continuo opzionale della parola "Jarvis". Il riconoscimento avviene sul computer: Speech su macOS (in locale quando il Mac lo supporta per l'italiano; altrimenti macOS usa il servizio di riconoscimento di Apple in rete), Vosk con modello italiano offline su Windows. Le risposte sono lette ad alta voce.
-- **Router a più livelli**: Haiku per i comandi normali, Sonnet per analisi e testi. Opus (ragionamento approfondito) e Fable (massima capacità, costo più alto) si usano solo con `/opus` o `/fable`. `/sonnet`, `/haiku`, `/opus` e `/fable` forzano il modello.
+- **Router a più livelli**: Haiku per i comandi normali, Sonnet per analisi e testi. Opus (ragionamento approfondito) e Fable (massima capacità, costo più alto) si usano solo con `/opus` o `/fable`. `/sonnet`, `/haiku`, `/opus` e `/fable` forzano il modello. Su macOS modello e impegno si scelgono anche dal pannello 02 "NUCLEO AI" dell'HUD.
 - **Iniziativa**: briefing del mattino, avviso 15 minuti prima degli impegni, avviso di batteria scarica.
 - **Telefono**: pagina web servita dal computer sulla rete locale, protetta da token. Va aggiunta alla schermata Home.
 
@@ -129,8 +129,8 @@ Al primo avvio macOS chiede i permessi solo quando servono:
 | Permesso | Serve per |
 |---|---|
 | Calendari, Promemoria, Contatti | impegni, promemoria, destinatari |
-| Automazione (Mail, Note, Spotify, System Events, WhatsApp) | comandare le app |
-| Accessibilità | luminosità, invio automatico su WhatsApp |
+| Automazione (Mail, Note, Safari, Spotify, System Events, WhatsApp) | comandare le app |
+| Accessibilità | luminosità, invio automatico su WhatsApp, aprire un link in un profilo di Safari |
 | Registrazione schermo | "cosa c'è sullo schermo?" |
 | Microfono e Riconoscimento vocale | comandi a voce |
 | Rete locale | ricevere i comandi dal telefono sulla stessa rete Wi-Fi |
@@ -260,7 +260,8 @@ Il menu **Permessi e configurazione** controlla (in sola lettura) microfono, not
 
 ## Uso
 
-- **HUD**: richiama con la scorciatoia (vedi sopra), scrivi o premi MIC. ESC nasconde.
+- **HUD**: richiama con la scorciatoia (vedi sopra), scrivi o premi l'icona del microfono. ESC nasconde.
+- **Link**: "apri questo form nel profilo scuola" usa `jarvis sys url <https://...> [--profilo scuola|personale|vuota]` (macOS, Safari). Senza profilo apre il link in Safari; col profilo apre una nuova finestra di quel profilo e serve il permesso Accessibilità.
 - **Terminale**: `jarvis help` mostra tutti i comandi. `jarvis chat` apre una conversazione, `jarvis ask "..."` invia una domanda singola.
 - **Telefono**: menu JARVIS (barra dei menu su Mac, icona nella barra su Windows) > Telefono > "Accesso dal telefono attivo", poi "Collega telefono (codice QR)".
   Su macOS, se Safari sul telefono non riesce a connettersi: **Impostazioni di Sistema > Privacy e sicurezza > Rete locale** e attiva JARVIS. Il telefono deve essere sulla stessa rete Wi-Fi (con i dati cellulari serve Tailscale); alcune reti di scuole e hotel isolano i dispositivi.
